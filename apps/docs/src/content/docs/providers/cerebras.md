@@ -14,7 +14,7 @@ const agent = new Agent({
   name: 'my-agent',
   model: {
     provider: 'cerebras',
-    model: 'llama-3.3-70b',
+    model: 'llama3.3-70b',
   },
   systemPrompt: 'You are a helpful assistant.',
 });
@@ -28,8 +28,8 @@ npx wrangler secret put CEREBRAS_API_KEY
 
 | Model | Best for |
 |---|---|
-| `llama-3.3-70b` | Best quality (recommended) |
-| `llama-3.1-8b` | Fastest, lightweight tasks |
+| `llama3.3-70b` | Best quality (recommended) |
+| `llama3.1-8b` | Fastest, lightweight tasks |
 
 ## Environment variable
 

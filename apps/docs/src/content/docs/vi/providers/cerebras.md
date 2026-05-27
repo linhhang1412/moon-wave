@@ -11,7 +11,7 @@ Lấy API key tại [cloud.cerebras.ai](https://cloud.cerebras.ai).
 
 ```typescript
 const agent = new Agent({
-  model: { provider: 'cerebras', model: 'llama-3.3-70b' },
+  model: { provider: 'cerebras', model: 'llama3.3-70b' },
   systemPrompt: 'Bạn là trợ lý hữu ích.',
 });
 ```
@@ -24,5 +24,5 @@ npx wrangler secret put CEREBRAS_API_KEY
 
 | Model | Phù hợp |
 |---|---|
-| `llama-3.3-70b` | Chất lượng cao (khuyến nghị) |
-| `llama-3.1-8b` | Nhanh nhất, tác vụ nhẹ |
+| `llama3.3-70b` | Chất lượng cao (khuyến nghị) |
+| `llama3.1-8b` | Nhanh nhất, tác vụ nhẹ |

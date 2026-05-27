@@ -10,7 +10,7 @@ const providerEnvKey: Record<Provider, string> = {
 const providerModel: Record<Provider, string> = {
   groq: 'llama-3.3-70b-versatile',
   google: 'gemini-2.0-flash',
-  cerebras: 'llama-3.3-70b',
+  cerebras: 'llama3.3-70b',
   workersai: '@cf/meta/llama-3.1-8b-instruct',
 };
 
