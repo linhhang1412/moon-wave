@@ -70,11 +70,19 @@ export function indexTs(config: ProjectConfig): string {
   const webchat = new WebChatChannel();
   return webchat.handle(request, channelRunner, { sessionId: 'default', env });`
     : `
-  const url = new URL(request.url);
-  const input = url.searchParams.get('q') ?? 'Hello!';
+  if (request.method === 'GET') {
+    return new Response(JSON.stringify({ status: 'ok' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
-  const result = await agent.run(input, { sessionId: 'default', env });
-  return new Response(result.output);`;
+  const { input, sessionId } = await request.json() as { input: string; sessionId?: string };
+  if (!input) return new Response('Missing "input"', { status: 400 });
+
+  const result = await agent.run(input, { sessionId: sessionId ?? 'default', env });
+  return new Response(JSON.stringify(result), {
+    headers: { 'Content-Type': 'application/json' },
+  });`;
 
   const imports = ['import { Agent } from \'@moon-wave/core\';', memoryImport, channelImport]
     .filter(Boolean).join('\n');
