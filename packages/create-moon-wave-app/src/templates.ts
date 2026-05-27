@@ -22,10 +22,10 @@ const providerSetup: Record<Provider, string> = {
 };
 
 const providerImport: Record<Provider, string> = {
-  groq: `import { GroqProvider } from '@moon-wave/providers';`,
-  google: `import { GoogleProvider } from '@moon-wave/providers';`,
-  cerebras: `import { CerebrasProvider } from '@moon-wave/providers';`,
-  workersai: `import { WorkersAIProvider } from '@moon-wave/providers';`,
+  groq: '',
+  google: '',
+  cerebras: '',
+  workersai: '',
 };
 
 export function indexTs(config: ProjectConfig): string {
@@ -76,10 +76,10 @@ export function indexTs(config: ProjectConfig): string {
   const result = await agent.run(input, { sessionId: 'default', env });
   return new Response(result.output);`;
 
-  return `#!/usr/bin/env node
-${provImport}
-${memoryImport}
-${channelImport}
+  const imports = ['import { Agent } from \'@moon-wave/core\';', memoryImport, channelImport]
+    .filter(Boolean).join('\n');
+
+  return `${imports}
 
 interface Env {
 ${envType}${memoryEnvType}
@@ -95,7 +95,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {${handlerCode}
   },
 };
-`.trimStart();
+`;
 }
 
 export function packageJson(config: ProjectConfig): string {
