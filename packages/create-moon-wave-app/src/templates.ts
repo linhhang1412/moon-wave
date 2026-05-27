@@ -47,7 +47,7 @@ export function indexTs(config: ProjectConfig): string {
     ? `\n  memory: { type: 'kv', adapter: new KVMemoryAdapter(env.SESSIONS) },`
     : memory === 'd1'
     ? `\n  memory: { type: 'd1', adapter: new D1MemoryAdapter(env.DB) },`
-    : '';
+    : `\n  memory: 'none',`;
 
   const envType = provider === 'workersai'
     ? `  AI: Ai;`
