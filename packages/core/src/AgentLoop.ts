@@ -20,10 +20,12 @@ export class AgentLoop {
     await memory.addMessage(ctx.sessionId, { role: 'user', content: userMessage });
 
     const systemMessage: Message = { role: 'system', content: this.config.systemPrompt };
+    const userMsg: Message = { role: 'user', content: userMessage };
 
     for (let i = 0; i < maxIterations; i++) {
       const history = await memory.getMessages(ctx.sessionId);
-      const messages: Message[] = [systemMessage, ...history];
+      // fallback to current message when memory is none (history empty)
+      const messages: Message[] = [systemMessage, ...(history.length > 0 ? history : [userMsg])];
       const toolSchemas = tools.getSchemas();
 
       const response = await provider.chat(messages, toolSchemas);
