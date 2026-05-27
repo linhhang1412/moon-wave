@@ -1,0 +1,8 @@
+name = "moon-wave-mcp-server"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Set via wrangler secret: npx wrangler secret put MOON_WAVE_TOKEN
+# Set via wrangler secret: npx wrangler secret put GROQ_API_KEY

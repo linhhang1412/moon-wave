@@ -1,0 +1,38 @@
+{
+  "name": "@moon-wave/mcp",
+  "version": "0.1.0",
+  "description": "MCP server adapter for moon-wave agents — deploy agents as Claude Code tools",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@moon-wave/core": "workspace:*",
+    "@moon-wave/types": "workspace:*",
+    "@moon-wave/observability": "workspace:*",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  },
+  "author": "linhhang1412",
+  "license": "MIT",
+  "homepage": "https://github.com/linhhang1412/moon-wave#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linhhang1412/moon-wave.git"
+  },
+  "bugs": {
+    "url": "https://github.com/linhhang1412/moon-wave/issues"
+  }
+}

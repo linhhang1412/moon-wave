@@ -1,0 +1,21 @@
+{
+  "name": "mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Example moon-wave MCP server — deploy agents as Claude Code tools",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@moon-wave/core": "workspace:*",
+    "@moon-wave/mcp": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "typescript": "^5.5.0",
+    "wrangler": "^3.100.0"
+  }
+}

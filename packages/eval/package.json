@@ -1,0 +1,35 @@
+{
+  "name": "@moon-wave/eval",
+  "version": "0.1.0",
+  "description": "Eval framework for testing moon-wave agents",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@moon-wave/core": "workspace:*",
+    "@moon-wave/types": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  },
+  "author": "linhhang1412",
+  "license": "MIT",
+  "homepage": "https://github.com/linhhang1412/moon-wave#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linhhang1412/moon-wave.git"
+  },
+  "bugs": {
+    "url": "https://github.com/linhhang1412/moon-wave/issues"
+  }
+}
