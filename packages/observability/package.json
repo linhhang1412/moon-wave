@@ -1,6 +1,6 @@
 {
   "name": "@moon-wave/observability",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Distributed tracing for moon-wave agents",
   "type": "module",
   "exports": {

@@ -1,6 +1,6 @@
 {
   "name": "@moon-wave/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Core agent loop and tool registry for moon-wave",
   "type": "module",
   "exports": {
@@ -15,9 +15,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@moon-wave/types": "workspace:*",
-    "@moon-wave/providers": "workspace:*",
-    "@moon-wave/memory": "workspace:*"
+    "@moon-wave/types": "^0.1.0",
+    "@moon-wave/providers": "^0.1.0",
+    "@moon-wave/memory": "^0.1.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

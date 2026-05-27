@@ -1,6 +1,6 @@
 {
   "name": "@moon-wave/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server adapter for moon-wave agents — deploy agents as Claude Code tools",
   "type": "module",
   "exports": {
@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "@moon-wave/core": "workspace:*",
-    "@moon-wave/types": "workspace:*",
-    "@moon-wave/observability": "workspace:*",
+    "@moon-wave/core": "^0.1.0",
+    "@moon-wave/types": "^0.1.0",
+    "@moon-wave/observability": "^0.1.0",
     "zod": "^3.25.0"
   },
   "devDependencies": {

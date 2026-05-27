@@ -1,6 +1,6 @@
 {
   "name": "@moon-wave/channels",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Channel adapters for moon-wave: Telegram, Web Chat",
   "type": "module",
   "exports": {
@@ -15,8 +15,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@moon-wave/types": "workspace:*",
-    "@moon-wave/core": "workspace:*"
+    "@moon-wave/types": "^0.1.0",
+    "@moon-wave/core": "^0.1.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
