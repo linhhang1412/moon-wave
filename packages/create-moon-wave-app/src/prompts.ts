@@ -1,5 +1,5 @@
 import * as p from '@clack/prompts';
-import type { ProjectConfig, Provider, Memory, Channel } from './types.js';
+import type { ProjectConfig, Provider, Memory, Channel, Template } from './types.js';
 
 export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
   p.intro('create-moon-wave-app');
@@ -11,6 +11,16 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
   });
 
   if (p.isCancel(name)) { p.cancel('Cancelled.'); process.exit(0); }
+
+  const template = await p.select<{ value: Template; label: string; hint: string }[], Template>({
+    message: 'Template:',
+    options: [
+      { value: 'agent', label: 'Agent', hint: 'Cloudflare Worker with HTTP endpoint' },
+      { value: 'mcp-server', label: 'MCP Server', hint: 'Expose agents as tools in Claude Code' },
+    ],
+  });
+
+  if (p.isCancel(template)) { p.cancel('Cancelled.'); process.exit(0); }
 
   const provider = await p.select<{ value: Provider; label: string }[], Provider>({
     message: 'LLM Provider:',
@@ -24,27 +34,33 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
 
   if (p.isCancel(provider)) { p.cancel('Cancelled.'); process.exit(0); }
 
-  const memory = await p.select<{ value: Memory; label: string; hint: string }[], Memory>({
-    message: 'Memory:',
-    options: [
-      { value: 'none', label: 'None', hint: 'stateless' },
-      { value: 'kv', label: 'KV  (session history)', hint: 'Cloudflare KV' },
-      { value: 'd1', label: 'D1  (persistent history)', hint: 'Cloudflare D1 SQLite' },
-    ],
-  });
+  // memory + channel only relevant for agent template
+  let memory: Memory = 'none';
+  let channel: Channel = 'none';
 
-  if (p.isCancel(memory)) { p.cancel('Cancelled.'); process.exit(0); }
+  if (template === 'agent') {
+    const memoryAnswer = await p.select<{ value: Memory; label: string; hint: string }[], Memory>({
+      message: 'Memory:',
+      options: [
+        { value: 'none', label: 'None', hint: 'stateless' },
+        { value: 'kv', label: 'KV  (session history)', hint: 'Cloudflare KV' },
+        { value: 'd1', label: 'D1  (persistent history)', hint: 'Cloudflare D1 SQLite' },
+      ],
+    });
+    if (p.isCancel(memoryAnswer)) { p.cancel('Cancelled.'); process.exit(0); }
+    memory = memoryAnswer as Memory;
 
-  const channel = await p.select<{ value: Channel; label: string }[], Channel>({
-    message: 'Channel:',
-    options: [
-      { value: 'none', label: 'None  (HTTP only)' },
-      { value: 'telegram', label: 'Telegram Bot' },
-      { value: 'webchat', label: 'Web Chat  (SSE)' },
-    ],
-  });
-
-  if (p.isCancel(channel)) { p.cancel('Cancelled.'); process.exit(0); }
+    const channelAnswer = await p.select<{ value: Channel; label: string }[], Channel>({
+      message: 'Channel:',
+      options: [
+        { value: 'none', label: 'None  (HTTP only)' },
+        { value: 'telegram', label: 'Telegram Bot' },
+        { value: 'webchat', label: 'Web Chat  (SSE)' },
+      ],
+    });
+    if (p.isCancel(channelAnswer)) { p.cancel('Cancelled.'); process.exit(0); }
+    channel = channelAnswer as Channel;
+  }
 
   const install = await p.confirm({ message: 'Install dependencies?' });
 
@@ -52,9 +68,10 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
 
   return {
     name: String(name).trim(),
+    template: template as Template,
     provider: provider as Provider,
-    memory: memory as Memory,
-    channel: channel as Channel,
+    memory,
+    channel,
     install: Boolean(install),
   };
 }

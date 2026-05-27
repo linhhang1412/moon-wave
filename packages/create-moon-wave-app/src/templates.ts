@@ -213,3 +213,118 @@ npm run deploy
 \`\`\`
 `;
 }
+
+// ─── MCP Server template ───────────────────────────────────────────────────
+
+export function mcpIndexTs(config: ProjectConfig): string {
+  const { name, provider } = config;
+  const model = providerModel[provider];
+  const envKey = providerEnvKey[provider];
+
+  const envField = provider === 'workersai'
+    ? `  AI: Ai;`
+    : `  ${envKey}: string;`;
+
+  return `import { Agent } from '@moon-wave/core';
+import { MCPAgentServer } from '@moon-wave/mcp';
+
+export interface Env {
+  MOON_WAVE_TOKEN: string;
+${envField}
+}
+
+const agent = new Agent({
+  name: '${name}',
+  model: { provider: '${provider}', model: '${model}' },
+  systemPrompt: 'You are a helpful assistant.',
+});
+
+export default {
+  async fetch(req: Request, env: Env): Promise<Response> {
+    const server = new MCPAgentServer({ bearerToken: env.MOON_WAVE_TOKEN });
+    server.register('${name}', agent, 'Helpful assistant agent');
+    return server.handle(req, env as unknown as Record<string, unknown>);
+  },
+};
+`;
+}
+
+export function mcpPackageJson(config: ProjectConfig): string {
+  const { name } = config;
+  return JSON.stringify({
+    name,
+    version: '0.1.0',
+    private: true,
+    type: 'module',
+    scripts: {
+      dev: 'wrangler dev',
+      deploy: 'wrangler deploy',
+    },
+    dependencies: {
+      '@moon-wave/core': '^0.1.0',
+      '@moon-wave/mcp': '^0.1.0',
+    },
+    devDependencies: {
+      '@cloudflare/workers-types': '^4.0.0',
+      wrangler: '^3.0.0',
+      typescript: '^5.5.0',
+    },
+  }, null, 2);
+}
+
+export function mcpWranglerToml(config: ProjectConfig): string {
+  const { name, provider } = config;
+  const aiBinding = provider === 'workersai' ? `\n[ai]\nbinding = "AI"\n` : '';
+  return `name = "${name}"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+${aiBinding}`.trim();
+}
+
+export function mcpEnvExample(config: ProjectConfig): string {
+  const envKey = providerEnvKey[config.provider];
+  const lines = ['MOON_WAVE_TOKEN='];
+  if (envKey) lines.push(`${envKey}=`);
+  return lines.join('\n') + '\n';
+}
+
+export function mcpReadme(config: ProjectConfig): string {
+  const { name, provider } = config;
+  const envKey = providerEnvKey[provider];
+
+  return `# ${name}
+
+An MCP server built with [moon-wave](https://github.com/linhhang1412/moon-wave).
+Exposes your agents as tools in Claude Code and other MCP clients.
+
+## Deploy
+
+\`\`\`bash
+npm install
+npx wrangler secret put MOON_WAVE_TOKEN   # your auth token (any string)
+${envKey ? `npx wrangler secret put ${envKey}\n` : ''}\
+npm run deploy
+\`\`\`
+
+## Connect to Claude Code
+
+Add to \`~/.claude/settings.json\`:
+
+\`\`\`json
+{
+  "mcpServers": {
+    "${name}": {
+      "type": "http",
+      "url": "https://${name}.<subdomain>.workers.dev",
+      "headers": {
+        "Authorization": "Bearer <your-MOON_WAVE_TOKEN>"
+      }
+    }
+  }
+}
+\`\`\`
+
+Restart Claude Code. Your agent is now available as a tool.
+`;
+}
