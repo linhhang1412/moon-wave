@@ -17,6 +17,11 @@ export default defineConfig({
       editLink: {
         baseUrl: 'https://github.com/linhhang1412/moon-wave/edit/main/apps/docs/',
       },
+      defaultLocale: 'root',
+      locales: {
+        root: { label: 'English', lang: 'en' },
+        vi: { label: 'Tiếng Việt', lang: 'vi' },
+      },
       sidebar: [
         { label: 'Getting Started', autogenerate: { directory: 'getting-started' } },
         { label: 'Guides', autogenerate: { directory: 'guides' } },
