@@ -1,0 +1,82 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+---
+
+<StarlightPage
+  frontmatter={{
+    title: 'moon-wave',
+    template: 'splash',
+    hero: {
+      title: 'Xây dựng AI agent trên Cloudflare',
+      tagline: 'TypeScript framework cho Cloudflare Workers — tools, memory, multi-agent, channels sẵn có.',
+      actions: [
+        { text: 'Bắt đầu', link: '/vi/getting-started/quick-start', icon: 'right-arrow', variant: 'primary' },
+        { text: 'GitHub', link: 'https://github.com/linhhang1412/moon-wave', icon: 'github', variant: 'minimal' },
+      ],
+    },
+  }}
+>
+  <div class="features">
+    <div class="feature">
+      <h3>⚡ Không cold start</h3>
+      <p>Chạy trực tiếp trên edge network của Cloudflare — không cần quản lý server.</p>
+    </div>
+    <div class="feature">
+      <h3>🧠 Memory tích hợp</h3>
+      <p>KV cho session, D1 cho persistent storage, Vectorize cho semantic search.</p>
+    </div>
+    <div class="feature">
+      <h3>🤖 Đa provider</h3>
+      <p>Groq, Google Gemini, Cerebras, Workers AI — một interface thống nhất.</p>
+    </div>
+    <div class="feature">
+      <h3>🔧 Composable</h3>
+      <p>Tools, multi-agent networks, graph-based workflows — kết hợp tùy ý.</p>
+    </div>
+    <div class="feature">
+      <h3>📡 Channels</h3>
+      <p>Kết nối agent với Telegram hoặc Web Chat chỉ vài dòng code.</p>
+    </div>
+    <div class="feature">
+      <h3>🔍 Observable</h3>
+      <p>Distributed tracing theo chuẩn OpenTelemetry, tích hợp sẵn từ đầu.</p>
+    </div>
+  </div>
+
+  <div class="install">
+    <code>npx create-moon-wave-app my-agent</code>
+  </div>
+</StarlightPage>
+
+<style>
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin: 3rem 0;
+  }
+  .feature {
+    padding: 1.25rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+  }
+  .feature h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+  }
+  .feature p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--sl-color-gray-2);
+  }
+  .install {
+    text-align: center;
+    margin: 2rem 0;
+  }
+  .install code {
+    background: var(--sl-color-gray-6);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+  }
+</style>
