@@ -8,6 +8,7 @@ export interface AnthropicConfig {
 
 const ANTHROPIC_BASE = 'https://api.anthropic.com/v1';
 const ANTHROPIC_VERSION = '2023-06-01';
+const ANTHROPIC_MAX_TOKENS = 4096;
 
 interface AnthropicToolUse {
   type: 'tool_use';
@@ -35,7 +36,7 @@ export class AnthropicProvider extends BaseProvider {
 
     const body: Record<string, unknown> = {
       model: this.config.model,
-      max_tokens: 4096,
+      max_tokens: ANTHROPIC_MAX_TOKENS,
       messages: conversationMsgs,
       ...(systemMsg && { system: systemMsg.content }),
       ...(tools?.length && { tools: this.toAnthropicTools(tools) }),
@@ -81,7 +82,7 @@ export class AnthropicProvider extends BaseProvider {
     });
   }
 
-  private toAnthropicTools(tools: ToolSchema[]) {
+  private toAnthropicTools(tools: ToolSchema[]): Array<{ name: string; description: string; input_schema: ToolSchema['parameters'] }> {
     return tools.map((t) => ({
       name: t.name,
       description: t.description,

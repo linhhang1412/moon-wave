@@ -1,5 +1,5 @@
 import type { Agent } from '@moon-wave/core';
-import type { Evaluator, EvalVerdict } from '../types.js';
+import type { Evaluator, EvalRunContext, EvalVerdict } from '../types.js';
 
 export interface LLMJudgeOptions {
   criteria: string;
@@ -8,7 +8,7 @@ export interface LLMJudgeOptions {
 }
 
 export function llmJudge(options: LLMJudgeOptions): Evaluator {
-  return async (output, ctx): Promise<EvalVerdict> => {
+  return async (output: string, ctx: EvalRunContext): Promise<EvalVerdict> => {
     const judge = options.judgeAgent ?? ctx.agent;
 
     const prompt = [

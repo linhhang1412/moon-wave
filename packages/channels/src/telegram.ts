@@ -1,5 +1,7 @@
 import type { Channel, IncomingMessage, OutgoingMessage } from './types';
 
+export const TELEGRAM_MAX_MESSAGE_LENGTH = 4096;
+
 export interface TelegramConfig {
   botToken: string;
   secretToken?: string;
@@ -73,7 +75,7 @@ export class TelegramChannel implements Channel {
     });
   }
 
-  private splitMessage(text: string, maxLen = 4096): string[] {
+  private splitMessage(text: string, maxLen = TELEGRAM_MAX_MESSAGE_LENGTH): string[] {
     if (text.length <= maxLen) return [text];
     const chunks: string[] = [];
     for (let i = 0; i < text.length; i += maxLen) chunks.push(text.slice(i, i + maxLen));

@@ -2,6 +2,8 @@ import type { AgentContext } from '@moon-wave/types';
 import { Graph } from './Graph';
 import { WorkflowContext } from './WorkflowContext';
 
+export const DEFAULT_MAX_STEPS = 20;
+
 export interface WorkflowResult {
   output: unknown;
   steps: Array<{ name: string; result: unknown; durationMs: number }>;
@@ -11,7 +13,7 @@ export interface WorkflowResult {
 export class WorkflowEngine {
   constructor(
     private graph: Graph,
-    private maxSteps = 20,
+    private maxSteps = DEFAULT_MAX_STEPS,
   ) {}
 
   async run(input: unknown, agentCtx: AgentContext): Promise<WorkflowResult> {

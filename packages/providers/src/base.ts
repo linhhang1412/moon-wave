@@ -42,7 +42,7 @@ export abstract class BaseProvider implements LLMProvider {
     return fetchWithRetry(input, init);
   }
 
-  protected toOpenAITools(tools: ToolSchema[]) {
+  protected toOpenAITools(tools: ToolSchema[]): Array<{ type: 'function'; function: ToolSchema }> {
     return tools.map((t) => ({ type: 'function' as const, function: t }));
   }
 }
