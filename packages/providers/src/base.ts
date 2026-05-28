@@ -6,9 +6,13 @@ export abstract class BaseProvider implements LLMProvider {
   stream(messages: Message[], tools?: ToolSchema[]): ReadableStream<string> {
     return new ReadableStream({
       start: async (controller) => {
-        const response = await this.chat(messages, tools);
-        if (response.content) controller.enqueue(response.content);
-        controller.close();
+        try {
+          const response = await this.chat(messages, tools);
+          if (response.content) controller.enqueue(response.content);
+          controller.close();
+        } catch (err) {
+          controller.error(err);
+        }
       },
     });
   }

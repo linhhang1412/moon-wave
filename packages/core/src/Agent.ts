@@ -12,6 +12,7 @@ export class Agent {
 
   constructor(private config: AgentConfig) {
     this.name = config.name;
+    if (config.tools?.length) this.registry.registerMany(config.tools);
   }
 
   use(...tools: ToolDefinition[]): this {
@@ -65,6 +66,7 @@ export class Agent {
     const systemPrompt = await this.getSystemPrompt(ctx);
 
     const loop = new AgentLoop({
+      agentName: this.name,
       systemPrompt,
       provider,
       memory,
@@ -75,8 +77,4 @@ export class Agent {
     return loop.run(input, ctx);
   }
 
-  stream(messages: { role: 'user' | 'system'; content: string }[], ctx: AgentContext): ReadableStream<string> {
-    const provider = this.buildProvider(ctx.env);
-    return provider.stream(messages);
-  }
 }
