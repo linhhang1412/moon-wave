@@ -27,6 +27,8 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
     options: [
       { value: 'groq', label: 'Groq  (fast, free tier)' },
       { value: 'google', label: 'Google Gemini  (generous free tier)' },
+      { value: 'openai', label: 'OpenAI  (GPT-4o, industry standard)' },
+      { value: 'anthropic', label: 'Anthropic  (Claude, best reasoning)' },
       { value: 'cerebras', label: 'Cerebras  (ultra-fast inference)' },
       { value: 'workersai', label: 'Cloudflare Workers AI  (no API key needed)' },
     ],

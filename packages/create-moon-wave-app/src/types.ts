@@ -1,5 +1,5 @@
 export type Template = 'agent' | 'mcp-server';
-export type Provider = 'groq' | 'google' | 'cerebras' | 'workersai';
+export type Provider = 'groq' | 'google' | 'cerebras' | 'workersai' | 'openai' | 'anthropic';
 export type Memory = 'none' | 'kv' | 'd1';
 export type Channel = 'none' | 'telegram' | 'webchat';
 
