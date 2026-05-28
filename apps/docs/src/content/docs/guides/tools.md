@@ -11,17 +11,19 @@ Tools let your agent take actions — search the web, call APIs, read files, and
 import { tool } from '@moon-wave/core';
 
 const getCurrentTime = tool({
-  name: 'get_current_time',
-  description: 'Returns the current UTC time',
-  parameters: {
-    type: 'object',
-    properties: {
-      timezone: {
-        type: 'string',
-        description: 'IANA timezone, e.g. "Asia/Ho_Chi_Minh"',
+  schema: {
+    name: 'get_current_time',
+    description: 'Returns the current UTC time',
+    parameters: {
+      type: 'object',
+      properties: {
+        timezone: {
+          type: 'string',
+          description: 'IANA timezone, e.g. "Asia/Ho_Chi_Minh"',
+        },
       },
+      required: [],
     },
-    required: [],
   },
   execute: async (args) => {
     const tz = (args.timezone as string) ?? 'UTC';
@@ -60,15 +62,17 @@ Parameters follow [JSON Schema](https://json-schema.org/) format:
 
 ```typescript
 const lookupUser = tool({
-  name: 'lookup_user',
-  description: 'Fetch user details by ID',
-  parameters: {
-    type: 'object',
-    properties: {
-      userId: { type: 'string', description: 'The user ID' },
-      includeEmail: { type: 'boolean', description: 'Include email in response' },
+  schema: {
+    name: 'lookup_user',
+    description: 'Fetch user details by ID',
+    parameters: {
+      type: 'object',
+      properties: {
+        userId: { type: 'string', description: 'The user ID' },
+        includeEmail: { type: 'boolean', description: 'Include email in response' },
+      },
+      required: ['userId'],
     },
-    required: ['userId'],
   },
   execute: async (args, ctx) => {
     const { userId, includeEmail } = args as { userId: string; includeEmail?: boolean };

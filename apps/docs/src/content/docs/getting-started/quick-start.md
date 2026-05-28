@@ -26,7 +26,6 @@ npm install @moon-wave/core @moon-wave/providers wrangler
 ```typescript
 // src/index.ts
 import { Agent } from '@moon-wave/core';
-import { GroqProvider } from '@moon-wave/providers';
 
 interface Env {
   GROQ_API_KEY: string;

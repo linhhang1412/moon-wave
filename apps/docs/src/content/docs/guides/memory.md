@@ -11,11 +11,10 @@ Best for: conversation history that doesn't need to persist beyond a few days.
 
 ```typescript
 import { Agent } from '@moon-wave/core';
-import { KVMemoryAdapter } from '@moon-wave/memory';
 
 interface Env {
   GROQ_API_KEY: string;
-  SESSIONS: KVNamespace;
+  KV: KVNamespace;
 }
 
 export default {
@@ -24,10 +23,7 @@ export default {
       name: 'my-agent',
       model: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
       systemPrompt: 'You are a helpful assistant.',
-      memory: {
-        type: 'kv',
-        adapter: new KVMemoryAdapter(env.SESSIONS),
-      },
+      memory: 'kv',
     });
 
     const { sessionId, input } = await request.json() as { sessionId: string; input: string };
@@ -41,14 +37,14 @@ Add the KV binding to `wrangler.toml`:
 
 ```toml
 [[kv_namespaces]]
-binding = "SESSIONS"
+binding = "KV"
 id = "your-kv-namespace-id"
 ```
 
 Create it:
 
 ```bash
-npx wrangler kv namespace create SESSIONS
+npx wrangler kv namespace create KV
 ```
 
 ## D1 Memory (persistent)
@@ -56,14 +52,10 @@ npx wrangler kv namespace create SESSIONS
 Best for: long-term conversation history stored in SQL.
 
 ```typescript
-import { D1MemoryAdapter } from '@moon-wave/memory';
-
 const agent = new Agent({
-  // ...
-  memory: {
-    type: 'd1',
-    adapter: new D1MemoryAdapter(env.DB),
-  },
+  name: 'my-agent',
+  model: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
+  memory: 'd1',
 });
 ```
 
@@ -86,11 +78,13 @@ database_id = "your-d1-id"
 
 Best for: agents that need to recall relevant past context, not just recent messages.
 
+Use `MemoryManager` directly when you need Vectorize alongside KV/D1:
+
 ```typescript
-import { VectorizeAdapter, MemoryManager } from '@moon-wave/memory';
+import { VectorizeAdapter, MemoryManager, KVMemoryAdapter, D1MemoryAdapter } from '@moon-wave/memory';
 
 const memory = new MemoryManager({
-  shortTerm: new KVMemoryAdapter(env.SESSIONS),
+  shortTerm: new KVMemoryAdapter(env.KV),
   longTerm: new D1MemoryAdapter(env.DB),
   vector: new VectorizeAdapter(env.VECTORIZE, env.AI),
 });

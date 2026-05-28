@@ -9,7 +9,7 @@ Build lightweight, composable AI agents that run natively on Cloudflare Workers 
 | Package | Description |
 |---------|-------------|
 | [`@moon-wave/types`](./packages/types) | Core TypeScript interfaces |
-| [`@moon-wave/providers`](./packages/providers) | LLM Router: Groq, Workers AI, Ollama, Google, Cerebras |
+| [`@moon-wave/providers`](./packages/providers) | LLM Router: Groq, Workers AI, Ollama, Google, Cerebras, OpenAI, Anthropic |
 | [`@moon-wave/memory`](./packages/memory) | Memory adapters: KV, D1, Vectorize |
 | [`@moon-wave/core`](./packages/core) | Agent Loop, Tool Registry, SSE streaming |
 | [`@moon-wave/workflow`](./packages/workflow) | Graph-based workflow engine |

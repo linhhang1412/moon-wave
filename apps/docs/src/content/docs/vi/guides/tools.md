@@ -11,17 +11,19 @@ Tools cho phép agent thực hiện hành động — tìm kiếm web, gọi API
 import { tool } from '@moon-wave/core';
 
 const getCurrentTime = tool({
-  name: 'get_current_time',
-  description: 'Trả về thời gian UTC hiện tại',
-  parameters: {
-    type: 'object',
-    properties: {
-      timezone: {
-        type: 'string',
-        description: 'IANA timezone, ví dụ "Asia/Ho_Chi_Minh"',
+  schema: {
+    name: 'get_current_time',
+    description: 'Trả về thời gian UTC hiện tại',
+    parameters: {
+      type: 'object',
+      properties: {
+        timezone: {
+          type: 'string',
+          description: 'IANA timezone, ví dụ "Asia/Ho_Chi_Minh"',
+        },
       },
+      required: [],
     },
-    required: [],
   },
   execute: async (args) => {
     const tz = (args.timezone as string) ?? 'Asia/Ho_Chi_Minh';
