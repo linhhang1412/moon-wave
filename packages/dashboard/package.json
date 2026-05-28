@@ -1,7 +1,7 @@
 {
-  "name": "@moon-wave/workspace",
-  "version": "0.1.2",
-  "description": "R2-backed filesystem and document processing for moon-wave",
+  "name": "@moon-wave/dashboard",
+  "version": "0.1.0",
+  "description": "Self-hosted dashboard for moon-wave agents — playground, traces, sessions",
   "type": "module",
   "exports": {
     ".": {
@@ -15,8 +15,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@moon-wave/types": "^0.1.0",
-    "@moon-wave/core": "^0.1.0"
+    "@moon-wave/core": "^0.1.0",
+    "@moon-wave/types": "^0.1.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

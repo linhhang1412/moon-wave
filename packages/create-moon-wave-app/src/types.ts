@@ -9,5 +9,6 @@ export interface ProjectConfig {
   provider: Provider;
   memory: Memory;
   channel: Channel;
+  dashboard: boolean;
   install: boolean;
 }

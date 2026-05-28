@@ -27,6 +27,28 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  apps/dashboard-example:
+    dependencies:
+      '@moon-wave/core':
+        specifier: ^0.1.0
+        version: 0.1.1
+      '@moon-wave/dashboard':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@moon-wave/workspace':
+        specifier: ^0.1.2
+        version: 0.1.2
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.0.0
+        version: 4.20260527.1
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      wrangler:
+        specifier: ^3.0.0
+        version: 3.114.17(@cloudflare/workers-types@4.20260527.1)
+
   apps/docs:
     dependencies:
       '@astrojs/starlight':
@@ -61,11 +83,11 @@ importers:
   packages/channels:
     dependencies:
       '@moon-wave/core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: ^0.1.0
+        version: 0.1.1
       '@moon-wave/types':
-        specifier: workspace:*
-        version: link:../types
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -77,14 +99,14 @@ importers:
   packages/core:
     dependencies:
       '@moon-wave/memory':
-        specifier: workspace:*
-        version: link:../memory
+        specifier: ^0.1.0
+        version: 0.1.0
       '@moon-wave/providers':
-        specifier: workspace:*
-        version: link:../providers
+        specifier: ^0.1.0
+        version: 0.1.0
       '@moon-wave/types':
-        specifier: workspace:*
-        version: link:../types
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -115,14 +137,30 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/dashboard:
+    dependencies:
+      '@moon-wave/core':
+        specifier: ^0.1.0
+        version: 0.1.1
+      '@moon-wave/types':
+        specifier: ^0.1.0
+        version: 0.1.0
+    devDependencies:
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   packages/eval:
     dependencies:
       '@moon-wave/core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: ^0.1.0
+        version: 0.1.1
       '@moon-wave/types':
-        specifier: workspace:*
-        version: link:../types
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -137,14 +175,14 @@ importers:
         specifier: ^1.12.0
         version: 1.29.0(zod@3.25.76)
       '@moon-wave/core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: ^0.1.0
+        version: 0.1.1
       '@moon-wave/observability':
-        specifier: workspace:*
-        version: link:../observability
+        specifier: ^0.1.0
+        version: 0.1.0
       '@moon-wave/types':
-        specifier: workspace:*
-        version: link:../types
+        specifier: ^0.1.0
+        version: 0.1.0
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -159,8 +197,8 @@ importers:
   packages/memory:
     dependencies:
       '@moon-wave/types':
-        specifier: workspace:*
-        version: link:../types
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -172,11 +210,11 @@ importers:
   packages/multi-agent:
     dependencies:
       '@moon-wave/core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: ^0.1.0
+        version: 0.1.1
       '@moon-wave/types':
-        specifier: workspace:*
-        version: link:../types
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -197,8 +235,8 @@ importers:
   packages/providers:
     dependencies:
       '@moon-wave/types':
-        specifier: workspace:*
-        version: link:../types
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -219,8 +257,8 @@ importers:
   packages/workflow:
     dependencies:
       '@moon-wave/types':
-        specifier: workspace:*
-        version: link:../types
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -232,11 +270,11 @@ importers:
   packages/workspace:
     dependencies:
       '@moon-wave/core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: ^0.1.0
+        version: 0.1.1
       '@moon-wave/types':
-        specifier: workspace:*
-        version: link:../types
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       tsup:
         specifier: ^8.0.0
@@ -1210,6 +1248,27 @@ packages:
     peerDependenciesMeta:
       '@cfworker/json-schema':
         optional: true
+
+  '@moon-wave/core@0.1.1':
+    resolution: {integrity: sha512-tleGYtiJju1bUQOqEHsBEZdJqhG2nIUAxzRs2Wz0E2vFCrAZIXD0x5huYD0jyzuGtr8U4mh8B9GTqo4jMTTWPw==}
+
+  '@moon-wave/dashboard@0.1.0':
+    resolution: {integrity: sha512-l8nv1dARG1BJV1k/gOsjkeAOozkMvd70ijktHPtbeuZH3+QKLxqrXb7x3tBfr47gMDlMbU42C3DehlvtHBwpjw==}
+
+  '@moon-wave/memory@0.1.0':
+    resolution: {integrity: sha512-rvEHvzd1MRzipqmvh9Tlm2ElOP8gFp8LNqwkqH3+y1s/yk1ot0u2k/nd9Zak48Ua3+I/KmSlFdau73vem2zBXQ==}
+
+  '@moon-wave/observability@0.1.0':
+    resolution: {integrity: sha512-BbUbqskFpcxnZPf9bDuxyYE+P56ju0feSaYk9sLws8yUvOy+FwTjRd13OfPf2vgq+8zZjmEj4MUYmxcV0+bXeQ==}
+
+  '@moon-wave/providers@0.1.0':
+    resolution: {integrity: sha512-wHkVhLoJZyijC+N4K7nSPnvMv6rUqETviDBmvUGs0DG6L1z/vmWZMIBqE954Lun7rTFId1TO7Mqe/0hTrjguog==}
+
+  '@moon-wave/types@0.1.0':
+    resolution: {integrity: sha512-eMreV5hldF+x1+08BOIUpK4rOdFSGISQFfNhM3pCa07odnKS9OQPEEDfqwiiWy3LSP03bhwls6r8kBiuD8QYPA==}
+
+  '@moon-wave/workspace@0.1.2':
+    resolution: {integrity: sha512-gWP+26bYdFXjQp6u70TbtXWDm11kaBDymGVvGY2YO/x2N0xyzXKm3d2P72AKIAFfHFmRVlzwceU0l1djzHlzSQ==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -4444,6 +4503,34 @@ snapshots:
       zod-to-json-schema: 3.25.2(zod@3.25.76)
     transitivePeerDependencies:
       - supports-color
+
+  '@moon-wave/core@0.1.1':
+    dependencies:
+      '@moon-wave/memory': link:packages/memory
+      '@moon-wave/providers': link:packages/providers
+      '@moon-wave/types': link:packages/types
+
+  '@moon-wave/dashboard@0.1.0':
+    dependencies:
+      '@moon-wave/core': 0.1.1
+      '@moon-wave/types': 0.1.0
+
+  '@moon-wave/memory@0.1.0':
+    dependencies:
+      '@moon-wave/types': 0.1.0
+
+  '@moon-wave/observability@0.1.0': {}
+
+  '@moon-wave/providers@0.1.0':
+    dependencies:
+      '@moon-wave/types': 0.1.0
+
+  '@moon-wave/types@0.1.0': {}
+
+  '@moon-wave/workspace@0.1.2':
+    dependencies:
+      '@moon-wave/core': 0.1.1
+      '@moon-wave/types': 0.1.0
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:

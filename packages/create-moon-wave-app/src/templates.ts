@@ -29,7 +29,7 @@ const providerImport: Record<Provider, string> = {
 };
 
 export function indexTs(config: ProjectConfig): string {
-  const { provider, memory, channel } = config;
+  const { provider, memory, channel, dashboard } = config;
   const envKey = providerEnvKey[provider];
   const model = providerModel[provider];
   const setup = providerSetup[provider];
@@ -41,6 +41,10 @@ export function indexTs(config: ProjectConfig): string {
 
   const channelImport = channel !== 'none'
     ? `import { ${channel === 'telegram' ? 'TelegramChannel' : 'WebChatChannel'}, ChannelRunner } from '@moon-wave/channels';`
+    : '';
+
+  const dashboardImport = dashboard
+    ? `import { createDashboard } from '@moon-wave/dashboard';`
     : '';
 
   const memoryConfig = memory === 'kv'
@@ -59,17 +63,39 @@ export function indexTs(config: ProjectConfig): string {
     ? `\n  DB: D1Database;`
     : '';
 
+  const dashboardEnvType = dashboard ? `\n  DASHBOARD_TOKEN?: string;` : '';
+
+  const dashboardSetup = dashboard
+    ? `
+const dashboard = createDashboard({
+  agents: { '${config.name}': agent },
+  auth: { token: undefined }, // set DASHBOARD_TOKEN secret to protect
+});
+`
+    : '';
+
+  const dashboardHandler = dashboard
+    ? `
+    if (url.pathname.startsWith('/dashboard')) {
+      return dashboard.handle(request, env as unknown as Record<string, unknown>);
+    }
+`
+    : '';
+
   const handlerCode = channel === 'telegram'
     ? `
+  const url = new URL(request.url);${dashboardHandler}
   const channelRunner = new ChannelRunner(agent);
   const telegram = new TelegramChannel(env.TELEGRAM_TOKEN);
   return telegram.handle(request, channelRunner, { sessionId: 'default', env });`
     : channel === 'webchat'
     ? `
+  const url = new URL(request.url);${dashboardHandler}
   const channelRunner = new ChannelRunner(agent);
   const webchat = new WebChatChannel();
   return webchat.handle(request, channelRunner, { sessionId: 'default', env });`
-    : `
+    : `${dashboard ? `
+  const url = new URL(request.url);${dashboardHandler}` : ''}
   const cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -118,13 +144,17 @@ export function indexTs(config: ProjectConfig): string {
     });
   }`;
 
-  const imports = ['import { Agent } from \'@moon-wave/core\';', memoryImport, channelImport]
-    .filter(Boolean).join('\n');
+  const imports = [
+    `import { Agent } from '@moon-wave/core';`,
+    memoryImport,
+    channelImport,
+    dashboardImport,
+  ].filter(Boolean).join('\n');
 
   return `${imports}
 
 interface Env {
-${envType}${memoryEnvType}
+${envType}${memoryEnvType}${dashboardEnvType}
 }
 
 const agent = new Agent({
@@ -132,7 +162,7 @@ const agent = new Agent({
   model: { provider: '${provider}', model: '${model}' },
   systemPrompt: 'You are a helpful assistant.',${memoryConfig}
 });
-
+${dashboardSetup}
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {${handlerCode}
   },
@@ -141,13 +171,14 @@ export default {
 }
 
 export function packageJson(config: ProjectConfig): string {
-  const { name, provider, memory, channel } = config;
+  const { name, provider, memory, channel, dashboard } = config;
   const deps: Record<string, string> = {
     '@moon-wave/core': '^0.1.0',
     '@moon-wave/providers': '^0.1.0',
   };
   if (memory !== 'none') deps['@moon-wave/memory'] = '^0.1.0';
   if (channel !== 'none') deps['@moon-wave/channels'] = '^0.1.0';
+  if (dashboard) deps['@moon-wave/dashboard'] = '^0.1.0';
 
   return JSON.stringify({
     name,
@@ -230,8 +261,20 @@ dist
 }
 
 export function readme(config: ProjectConfig): string {
-  const { name, provider } = config;
+  const { name, provider, dashboard } = config;
   const envKey = providerEnvKey[provider];
+
+  const dashboardSection = dashboard ? `
+## Dashboard
+
+A self-hosted dashboard is available at \`/dashboard\` when running locally or after deploy.
+
+To protect it with a token in production:
+\`\`\`bash
+npx wrangler secret put DASHBOARD_TOKEN
+\`\`\`
+Then update \`src/index.ts\` and set \`auth: { token: env.DASHBOARD_TOKEN }\` in \`createDashboard()\`.
+` : '';
 
   return `# ${name}
 
@@ -249,7 +292,7 @@ ${envKey ? `Copy \`.env.example\` to \`.env\` and fill in your \`${envKey}\`.\n`
 \`\`\`bash
 npm run dev
 \`\`\`
-
+${dashboardSection}
 ## Deploy
 
 \`\`\`bash

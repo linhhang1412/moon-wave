@@ -34,9 +34,10 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
 
   if (p.isCancel(provider)) { p.cancel('Cancelled.'); process.exit(0); }
 
-  // memory + channel only relevant for agent template
+  // memory + channel + dashboard only relevant for agent template
   let memory: Memory = 'none';
   let channel: Channel = 'none';
+  let dashboard = false;
 
   if (template === 'agent') {
     const memoryAnswer = await p.select<{ value: Memory; label: string; hint: string }[], Memory>({
@@ -60,6 +61,13 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
     });
     if (p.isCancel(channelAnswer)) { p.cancel('Cancelled.'); process.exit(0); }
     channel = channelAnswer as Channel;
+
+    const dashboardAnswer = await p.confirm({
+      message: 'Include self-hosted dashboard?  (chat playground + agent list at /dashboard)',
+      initialValue: false,
+    });
+    if (p.isCancel(dashboardAnswer)) { p.cancel('Cancelled.'); process.exit(0); }
+    dashboard = Boolean(dashboardAnswer);
   }
 
   const install = await p.confirm({ message: 'Install dependencies?' });
@@ -72,6 +80,7 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
     provider: provider as Provider,
     memory,
     channel,
+    dashboard,
     install: Boolean(install),
   };
 }
