@@ -161,6 +161,9 @@ importers:
         specifier: workspace:*
         version: link:../types
     devDependencies:
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(postcss@8.5.15)(typescript@5.9.3)
