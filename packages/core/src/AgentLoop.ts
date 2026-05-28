@@ -3,6 +3,7 @@ import type { MemoryManager } from '@moon-wave/memory';
 import type { ToolRegistry } from './tool';
 
 interface LoopConfig {
+  agentName: string;
   systemPrompt: string;
   provider: LLMProvider;
   memory: MemoryManager;
@@ -50,7 +51,13 @@ export class AgentLoop {
           toolCallId: id,
         });
 
-        if (isError) break;
+        if (isError) {
+          await memory.addMessage(ctx.sessionId, {
+            role: 'assistant',
+            content: `Tool "${name}" failed: ${JSON.stringify(result)}`,
+          });
+          break;
+        }
         continue;
       }
 
@@ -61,7 +68,7 @@ export class AgentLoop {
     }
 
     throw new Error(
-      `Agent "${ctx.sessionId}" exceeded max iterations (${maxIterations}). ` +
+      `Agent "${this.config.agentName}" exceeded max iterations (${maxIterations}). ` +
         `Tools called: ${toolCallLog.map((t) => t.name).join(', ')}`,
     );
   }

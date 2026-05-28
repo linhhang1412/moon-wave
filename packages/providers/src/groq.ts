@@ -47,7 +47,7 @@ export class GroqProvider extends BaseProvider {
     return { type: 'text', content: msg.content ?? '' };
   }
 
-  override stream(messages: Message[]): ReadableStream<string> {
+  override stream(messages: Message[], _tools?: ToolSchema[]): ReadableStream<string> {
     const { apiKey, model } = this.config;
     const baseUrl = this.baseUrl;
 
@@ -62,7 +62,11 @@ export class GroqProvider extends BaseProvider {
           body: JSON.stringify({ model, messages, stream: true }),
         });
 
-        const reader = res.body!.getReader();
+        if (!res.body) {
+          controller.error(new Error('Groq stream response has no body'));
+          return;
+        }
+        const reader = res.body.getReader();
         const decoder = new TextDecoder();
 
         while (true) {
