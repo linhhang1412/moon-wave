@@ -90,12 +90,9 @@ import type { Env } from '../../shared/env';
 
 export async function chatHandler(request: Request, env: Env): Promise<Response> {
   const agent = createChatAgent().use(...chatTools);
-  const runner = new ChannelRunner(agent);
   const telegram = new TelegramChannel(env.TELEGRAM_TOKEN);
-  return telegram.handle(request, runner, {
-    sessionId: 'default',
-    env: env as unknown as Record<string, unknown>,
-  });
+  const runner = new ChannelRunner(telegram, agent);
+  return runner.handle(request, env as unknown as Record<string, unknown>);
 }
 `;
   }
@@ -108,12 +105,9 @@ import type { Env } from '../../shared/env';
 
 export async function chatHandler(request: Request, env: Env): Promise<Response> {
   const agent = createChatAgent().use(...chatTools);
-  const runner = new ChannelRunner(agent);
   const webchat = new WebChatChannel();
-  return webchat.handle(request, runner, {
-    sessionId: 'default',
-    env: env as unknown as Record<string, unknown>,
-  });
+  const runner = new ChannelRunner(webchat, agent);
+  return runner.handle(request, env as unknown as Record<string, unknown>);
 }
 `;
   }
