@@ -26,6 +26,9 @@ export class KVMemoryAdapter implements MemoryAdapter {
   }
 
   async addMessage(sessionId: string, message: Message): Promise<void> {
+    // NOTE: KV does not support atomic updates. Under concurrent writes to the same
+    // sessionId, messages may be lost. Use D1MemoryAdapter for workloads with concurrent
+    // session writes.
     const messages = await this.getMessages(sessionId);
     messages.push(message);
     const trimmed = messages.slice(-this.maxMessages);

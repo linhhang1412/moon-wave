@@ -11,6 +11,7 @@ export interface RawToolCall {
 export abstract class BaseProvider implements LLMProvider {
   abstract chat(messages: Message[], tools?: ToolSchema[]): Promise<LLMResponse>;
 
+  /** Default implementation buffers the full chat() response. Override in subclasses for true token-by-token streaming. */
   stream(messages: Message[], tools?: ToolSchema[]): ReadableStream<string> {
     return new ReadableStream({
       start: async (controller) => {
