@@ -21,7 +21,7 @@ export async function withRetry<T>(
       lastError = err;
       const isRetryable =
         err instanceof TypeError || // network error
-        (err instanceof Error && /\b(429|500|502|503|504)\b/.test(err.message));
+        (err instanceof Error && [...RETRYABLE_STATUSES].some((s) => err.message.includes(String(s))));
 
       if (!isRetryable || attempt === maxAttempts - 1) throw err;
 

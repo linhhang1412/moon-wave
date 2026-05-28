@@ -20,8 +20,13 @@ export interface MCPAgentServerConfig {
 export class MCPAgentServer {
   private agents = new Map<string, RegisteredAgent>();
   private traces = new Map<string, Tracer>();
+  private readonly MAX_TRACES = 1000;
 
-  constructor(private config: MCPAgentServerConfig = {}) {}
+  constructor(private config: MCPAgentServerConfig = {}) {
+    if (!config.bearerToken) {
+      console.warn('[moon-wave/mcp] No bearerToken configured — all requests are accepted. Set bearerToken in production.');
+    }
+  }
 
   register(name: string, agent: Agent, description: string): this {
     this.agents.set(name, { agent, description });
@@ -78,6 +83,9 @@ export class MCPAgentServer {
 
         const tracer = new Tracer();
         this.traces.set(tracer.traceId, tracer);
+        if (this.traces.size > this.MAX_TRACES) {
+          this.traces.delete(this.traces.keys().next().value!);
+        }
 
         const ctx: AgentContext = {
           sessionId: sessionId ?? crypto.randomUUID(),

@@ -20,6 +20,9 @@ export class TelegramChannel implements Channel {
 
   constructor(private config: TelegramConfig) {
     this.apiBase = `https://api.telegram.org/bot${config.botToken}`;
+    if (!config.secretToken) {
+      console.warn('[moon-wave/channels] No secretToken configured for TelegramChannel — webhook requests are not verified.');
+    }
   }
 
   async verify(request: Request): Promise<boolean> {
@@ -53,11 +56,12 @@ export class TelegramChannel implements Channel {
     if (!chatId) return;
     const chunks = this.splitMessage(message.text);
     for (const chunk of chunks) {
-      await fetch(`${this.apiBase}/sendMessage`, {
+      const res = await fetch(`${this.apiBase}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatId, text: chunk, parse_mode: 'Markdown' }),
       });
+      if (!res.ok) throw new Error(`Telegram sendMessage failed: ${res.status} ${await res.text()}`);
     }
   }
 

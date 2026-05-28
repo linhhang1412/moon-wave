@@ -9,8 +9,6 @@ export { tool };
 export class Agent {
   readonly name: string;
   private registry = new ToolRegistry();
-  private _provider: LLMProvider | undefined;
-  private _memory: MemoryManager | undefined;
 
   constructor(private config: AgentConfig) {
     this.name = config.name;
@@ -62,16 +60,6 @@ export class Agent {
     });
   }
 
-  private getProvider(env: Record<string, unknown>): LLMProvider {
-    if (!this._provider) this._provider = this.buildProvider(env);
-    return this._provider;
-  }
-
-  private getMemory(env: Record<string, unknown>): MemoryManager {
-    if (!this._memory) this._memory = this.buildMemory(env);
-    return this._memory;
-  }
-
   private async getSystemPrompt(ctx: AgentContext): Promise<string> {
     const { systemPrompt } = this.config;
     if (!systemPrompt) return 'You are a helpful assistant.';
@@ -80,8 +68,8 @@ export class Agent {
   }
 
   async run(input: string, ctx: AgentContext): Promise<AgentResult> {
-    const provider = this.getProvider(ctx.env);
-    const memory = this.getMemory(ctx.env);
+    const provider = this.buildProvider(ctx.env);
+    const memory = this.buildMemory(ctx.env);
     const systemPrompt = await this.getSystemPrompt(ctx);
 
     const loop = new AgentLoop({

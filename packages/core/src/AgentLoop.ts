@@ -23,12 +23,13 @@ export class AgentLoop {
     const systemMessage: Message = { role: 'system', content: this.config.systemPrompt };
     const userMsg: Message = { role: 'user', content: userMessage };
 
-    for (let i = 0; i < maxIterations; i++) {
-      const history = await memory.getMessages(ctx.sessionId);
-      // fallback to current message when memory is none (history empty)
-      const messages: Message[] = [systemMessage, ...(history.length > 0 ? history : [userMsg])];
-      const toolSchemas = tools.getSchemas();
+    // Fetch history once before the loop to avoid N+1 KV reads (one per iteration).
+    // New messages are appended to the local array and persisted via memory.addMessage.
+    const history = await memory.getMessages(ctx.sessionId);
+    const messages: Message[] = [systemMessage, ...(history.length > 0 ? history : [userMsg])];
+    const toolSchemas = tools.getSchemas();
 
+    for (let i = 0; i < maxIterations; i++) {
       const response = await provider.chat(messages, toolSchemas);
 
       if (response.type === 'tool_call' && response.toolCalls?.length) {
@@ -44,11 +45,9 @@ export class AgentLoop {
 
           toolCallLog.push({ name: tc.name, args: tc.args, result });
 
-          await memory.addMessage(ctx.sessionId, {
-            role: 'tool',
-            content: JSON.stringify(result),
-            toolCallId: tc.id,
-          });
+          const toolMsg: Message = { role: 'tool', content: JSON.stringify(result), toolCallId: tc.id };
+          messages.push(toolMsg);
+          await memory.addMessage(ctx.sessionId, toolMsg);
         }
 
         // Let the LLM see all tool results and decide how to proceed (including recovering from errors)
@@ -56,7 +55,9 @@ export class AgentLoop {
       }
 
       const finalContent = response.content ?? '';
-      await memory.addMessage(ctx.sessionId, { role: 'assistant', content: finalContent });
+      const assistantMsg: Message = { role: 'assistant', content: finalContent };
+      messages.push(assistantMsg);
+      await memory.addMessage(ctx.sessionId, assistantMsg);
 
       return { output: finalContent, iterations: i + 1, toolCalls: toolCallLog };
     }
