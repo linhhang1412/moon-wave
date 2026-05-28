@@ -3,6 +3,11 @@ import { BaseProvider, type RawToolCall } from './base';
 
 export type { AiBinding };
 
+interface WorkersAIChatResponse {
+  response?: string;
+  tool_calls?: RawToolCall[];
+}
+
 export interface WorkersAIConfig {
   ai: AiBinding;
   model: string;
@@ -19,10 +24,10 @@ export class WorkersAIProvider extends BaseProvider {
       ...(tools?.length && {
         tools: this.toOpenAITools(tools),
       }),
-    })) as { response?: string; tool_calls?: unknown[] };
+    })) as WorkersAIChatResponse;
 
     if (response.tool_calls?.length) {
-      return this.normalizeToolCalls(response.tool_calls as RawToolCall[]);
+      return this.normalizeToolCalls(response.tool_calls);
     }
     return { type: 'text', content: response.response ?? '' };
   }
