@@ -22,5 +22,6 @@ export function gitignore(): string {
 dist
 .wrangler
 .env
+.env.local
 `;
 }

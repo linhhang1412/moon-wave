@@ -23,8 +23,8 @@ export function packageJson(config: ProjectConfig): string {
       },
       dependencies: deps,
       devDependencies: {
-        '@cloudflare/workers-types': '^4.0.0',
-        wrangler: '^3.0.0',
+        '@cloudflare/workers-types': '^4.20241205.0',
+        wrangler: '^3.100.0',
         typescript: '^5.5.0',
       },
     },

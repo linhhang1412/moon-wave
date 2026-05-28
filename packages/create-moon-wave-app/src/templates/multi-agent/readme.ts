@@ -20,6 +20,7 @@ To protect it with a token in production:
 \`\`\`bash
 npx wrangler secret put DASHBOARD_TOKEN
 \`\`\`
+Then update \`src/index.ts\` and set \`auth: { token: env.DASHBOARD_TOKEN }\` in \`createDashboard()\`.
 `
     : '';
 

@@ -2,7 +2,7 @@ import type { Provider } from '../types.js';
 
 export const providerEnvKey: Record<Provider, string> = {
   groq: 'GROQ_API_KEY',
-  google: 'GOOGLE_AI_KEY',
+  google: 'GOOGLE_API_KEY',
   cerebras: 'CEREBRAS_API_KEY',
   workersai: '',
   openai: 'OPENAI_API_KEY',

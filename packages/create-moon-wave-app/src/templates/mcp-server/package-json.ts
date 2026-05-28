@@ -16,8 +16,8 @@ export function mcpPackageJson(config: ProjectConfig): string {
         '@moon-wave/mcp': '^0.1.0',
       },
       devDependencies: {
-        '@cloudflare/workers-types': '^4.0.0',
-        wrangler: '^3.0.0',
+        '@cloudflare/workers-types': '^4.20241205.0',
+        wrangler: '^3.100.0',
         typescript: '^5.5.0',
       },
     },

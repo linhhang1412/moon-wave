@@ -102,8 +102,8 @@ export function chatToolsTs(): string {
 //     },
 //     required: ['input'],
 //   },
-//   execute: async ({ input }: { input: string }) => {
-//     return { result: input };
+//   execute: async (args: { input: string }, _ctx) => {
+//     return { result: args.input };
 //   },
 // });
 
