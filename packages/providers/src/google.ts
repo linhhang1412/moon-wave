@@ -1,5 +1,5 @@
 import type { Message, LLMResponse, ToolSchema } from '@moon-wave/types';
-import { BaseProvider } from './base';
+import { BaseProvider, type RawToolCall } from './base';
 
 export interface GoogleConfig {
   apiKey: string;
@@ -20,7 +20,7 @@ export class GoogleProvider extends BaseProvider {
   }
 
   async chat(messages: Message[], tools?: ToolSchema[]): Promise<LLMResponse> {
-    const res = await fetch(`${this.baseUrl}/chat/completions`, {
+    const res = await this.fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.config.apiKey}`,
@@ -36,17 +36,15 @@ export class GoogleProvider extends BaseProvider {
       }),
     });
 
-    if (!res.ok) {
-      throw new Error(`Google AI error ${res.status}: ${await res.text()}`);
-    }
+    if (!res.ok) throw new Error(`Google AI error ${res.status}: ${await res.text()}`);
 
     const data = (await res.json()) as {
       choices: Array<{ message: { content?: string; tool_calls?: unknown[] } }>;
     };
     const msg = data.choices[0].message;
 
-    if (msg.tool_calls?.[0]) {
-      return this.normalizeToolCall(msg.tool_calls[0] as never);
+    if (msg.tool_calls?.length) {
+      return this.normalizeToolCalls(msg.tool_calls as RawToolCall[]);
     }
     return { type: 'text', content: msg.content ?? '' };
   }

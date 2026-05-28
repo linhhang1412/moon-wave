@@ -15,8 +15,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@moon-wave/core": "^0.1.0",
-    "@moon-wave/types": "^0.1.0"
+    "@moon-wave/core": "workspace:*",
+    "@moon-wave/types": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

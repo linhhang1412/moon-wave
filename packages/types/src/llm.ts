@@ -21,7 +21,7 @@ export interface ToolCall {
 export interface LLMResponse {
   type: 'text' | 'tool_call';
   content?: string;
-  toolCall?: ToolCall;
+  toolCalls?: ToolCall[];
 }
 
 export interface LLMProvider {

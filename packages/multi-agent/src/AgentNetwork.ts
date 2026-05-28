@@ -1,10 +1,10 @@
-import type { AgentContext, AgentResult } from '@moon-wave/types';
+import type { AgentContext, AgentResult, ModelConfig } from '@moon-wave/types';
 import { Agent } from '@moon-wave/core';
 import { agentAsTool } from './agentAsTool';
 
 export interface NetworkConfig {
   name: string;
-  routerModel: { provider: string; model: string };
+  routerModel: ModelConfig;
   agents: Agent[];
   systemPrompt?: string;
 }
@@ -21,7 +21,7 @@ export class AgentNetwork {
 
     this.routerAgent = new Agent({
       name: config.name,
-      model: config.routerModel as never,
+      model: config.routerModel,
       systemPrompt:
         config.systemPrompt ??
         `You are a supervisor coordinating these agents:\n${agentList}\nAnalyze requests and delegate to the most appropriate agent.`,

@@ -1,5 +1,5 @@
 import type { Message, LLMResponse, ToolSchema, AiBinding } from '@moon-wave/types';
-import { BaseProvider } from './base';
+import { BaseProvider, type RawToolCall } from './base';
 
 export type { AiBinding };
 
@@ -21,8 +21,8 @@ export class WorkersAIProvider extends BaseProvider {
       }),
     })) as { response?: string; tool_calls?: unknown[] };
 
-    if (response.tool_calls?.[0]) {
-      return this.normalizeToolCall(response.tool_calls[0] as never);
+    if (response.tool_calls?.length) {
+      return this.normalizeToolCalls(response.tool_calls as RawToolCall[]);
     }
     return { type: 'text', content: response.response ?? '' };
   }

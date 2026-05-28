@@ -1,7 +1,7 @@
 import type { MemoryAdapter, Message } from '@moon-wave/types';
 
 const SESSION_TTL = 60 * 60 * 24; // 24h
-const MAX_MESSAGES = 50;
+const DEFAULT_MAX_MESSAGES = 50;
 
 export interface KVNamespaceBinding {
   get(key: string): Promise<string | null>;
@@ -10,7 +10,14 @@ export interface KVNamespaceBinding {
 }
 
 export class KVMemoryAdapter implements MemoryAdapter {
-  constructor(private kv: KVNamespaceBinding) {}
+  private maxMessages: number;
+
+  constructor(
+    private kv: KVNamespaceBinding,
+    options: { maxMessages?: number } = {},
+  ) {
+    this.maxMessages = options.maxMessages ?? DEFAULT_MAX_MESSAGES;
+  }
 
   async getMessages(sessionId: string): Promise<Message[]> {
     const raw = await this.kv.get(`session:${sessionId}`);
@@ -21,7 +28,7 @@ export class KVMemoryAdapter implements MemoryAdapter {
   async addMessage(sessionId: string, message: Message): Promise<void> {
     const messages = await this.getMessages(sessionId);
     messages.push(message);
-    const trimmed = messages.slice(-MAX_MESSAGES);
+    const trimmed = messages.slice(-this.maxMessages);
     await this.kv.put(`session:${sessionId}`, JSON.stringify(trimmed), {
       expirationTtl: SESSION_TTL,
     });

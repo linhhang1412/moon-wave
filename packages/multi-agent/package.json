@@ -12,11 +12,12 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --dts --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@moon-wave/types": "^0.1.0",
-    "@moon-wave/core": "^0.1.0"
+    "@moon-wave/types": "workspace:*",
+    "@moon-wave/core": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

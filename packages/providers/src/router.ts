@@ -4,6 +4,8 @@ import { WorkersAIProvider, type WorkersAIConfig } from './workersai';
 import { OllamaProvider, type OllamaConfig } from './ollama';
 import { GoogleProvider, type GoogleConfig } from './google';
 import { CerebrasProvider, type CerebrasConfig } from './cerebras';
+import { OpenAIProvider, type OpenAIConfig } from './openai';
+import { AnthropicProvider, type AnthropicConfig } from './anthropic';
 
 type ProviderConfigMap = {
   groq: GroqConfig;
@@ -11,6 +13,8 @@ type ProviderConfigMap = {
   ollama: OllamaConfig;
   google: GoogleConfig;
   cerebras: CerebrasConfig;
+  openai: OpenAIConfig;
+  anthropic: AnthropicConfig;
 };
 
 export class LLMRouter {
@@ -32,6 +36,12 @@ export class LLMRouter {
         break;
       case 'cerebras':
         this.providers.set(name, new CerebrasProvider(config as CerebrasConfig));
+        break;
+      case 'openai':
+        this.providers.set(name, new OpenAIProvider(config as OpenAIConfig));
+        break;
+      case 'anthropic':
+        this.providers.set(name, new AnthropicProvider(config as AnthropicConfig));
         break;
     }
     return this;

@@ -9,15 +9,16 @@ export class EvalSuite {
     private cases: EvalCase[],
   ) {}
 
-  async run(agentCtx: AgentContext, options: { print?: boolean } = {}): Promise<EvalReport> {
-    const { print = true } = options;
-    const results: EvalResult[] = [];
+  async run(
+    agentCtx: AgentContext,
+    options: { print?: boolean; concurrency?: number } = {},
+  ): Promise<EvalReport> {
+    const { print = true, concurrency = 1 } = options;
     const start = Date.now();
 
-    for (const c of this.cases) {
+    const runCase = async (c: EvalCase): Promise<EvalResult> => {
       const ctx: AgentContext = { ...agentCtx, sessionId: c.sessionId ?? crypto.randomUUID() };
       const t0 = Date.now();
-
       let output = '';
       let passed = false;
       let reason: string | undefined;
@@ -26,11 +27,7 @@ export class EvalSuite {
         const run = await this.agent.run(c.input, ctx);
         output = run.output;
 
-        const verdict = await c.evaluator(output, {
-          input: c.input,
-          agent: this.agent,
-          agentCtx: ctx,
-        });
+        const verdict = await c.evaluator(output, { input: c.input, agent: this.agent, agentCtx: ctx });
 
         if (typeof verdict === 'boolean') {
           passed = verdict;
@@ -45,7 +42,22 @@ export class EvalSuite {
         reason = `Error: ${output}`;
       }
 
-      results.push({ name: c.name, input: c.input, output, passed, reason, durationMs: Date.now() - t0 });
+      return { name: c.name, input: c.input, output, passed, reason, durationMs: Date.now() - t0 };
+    };
+
+    let results: EvalResult[];
+
+    if (concurrency <= 1) {
+      results = [];
+      for (const c of this.cases) results.push(await runCase(c));
+    } else {
+      // Run in batches to respect concurrency limit
+      results = [];
+      for (let i = 0; i < this.cases.length; i += concurrency) {
+        const batch = this.cases.slice(i, i + concurrency);
+        const batchResults = await Promise.all(batch.map(runCase));
+        results.push(...batchResults);
+      }
     }
 
     const report: EvalReport = {

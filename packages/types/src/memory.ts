@@ -1,7 +1,7 @@
 import type { Message } from './llm';
 
 export interface MemoryAdapter {
-  getMessages(sessionId: string): Promise<Message[]>;
+  getMessages(sessionId: string, limit?: number): Promise<Message[]>;
   addMessage(sessionId: string, message: Message): Promise<void>;
   clearSession(sessionId: string): Promise<void>;
 }
