@@ -11,11 +11,10 @@ Phù hợp cho: lịch sử hội thoại không cần lưu quá vài ngày.
 
 ```typescript
 import { Agent } from '@moon-wave/core';
-import { KVMemoryAdapter } from '@moon-wave/memory';
 
 interface Env {
   GROQ_API_KEY: string;
-  SESSIONS: KVNamespace;
+  KV: KVNamespace;
 }
 
 export default {
@@ -24,10 +23,7 @@ export default {
       name: 'my-agent',
       model: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
       systemPrompt: 'Bạn là trợ lý hữu ích.',
-      memory: {
-        type: 'kv',
-        adapter: new KVMemoryAdapter(env.SESSIONS),
-      },
+      memory: 'kv',
     });
 
     const { sessionId, input } = await request.json() as { sessionId: string; input: string };
@@ -41,14 +37,14 @@ Thêm KV binding vào `wrangler.toml`:
 
 ```toml
 [[kv_namespaces]]
-binding = "SESSIONS"
+binding = "KV"
 id = "your-kv-namespace-id"
 ```
 
 Tạo KV namespace:
 
 ```bash
-npx wrangler kv namespace create SESSIONS
+npx wrangler kv namespace create KV
 ```
 
 ## D1 Memory (persistent)
@@ -56,14 +52,10 @@ npx wrangler kv namespace create SESSIONS
 Phù hợp cho: lịch sử hội thoại lưu lâu dài trong SQL.
 
 ```typescript
-import { D1MemoryAdapter } from '@moon-wave/memory';
-
 const agent = new Agent({
-  // ...
-  memory: {
-    type: 'd1',
-    adapter: new D1MemoryAdapter(env.DB),
-  },
+  name: 'my-agent',
+  model: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
+  memory: 'd1',
 });
 ```
 
@@ -73,15 +65,26 @@ Chạy migration:
 npx wrangler d1 execute my-db --file=./node_modules/@moon-wave/memory/migrations/001_init.sql
 ```
 
+Thêm vào `wrangler.toml`:
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "my-agent-db"
+database_id = "your-d1-id"
+```
+
 ## Vectorize Memory (semantic search)
 
 Phù hợp cho: agent cần gợi lại context liên quan từ quá khứ, không chỉ tin nhắn gần nhất.
 
+Dùng `MemoryManager` trực tiếp khi cần kết hợp Vectorize với KV/D1:
+
 ```typescript
-import { VectorizeAdapter, MemoryManager } from '@moon-wave/memory';
+import { VectorizeAdapter, MemoryManager, KVMemoryAdapter, D1MemoryAdapter } from '@moon-wave/memory';
 
 const memory = new MemoryManager({
-  shortTerm: new KVMemoryAdapter(env.SESSIONS),
+  shortTerm: new KVMemoryAdapter(env.KV),
   longTerm: new D1MemoryAdapter(env.DB),
   vector: new VectorizeAdapter(env.VECTORIZE, env.AI),
 });
