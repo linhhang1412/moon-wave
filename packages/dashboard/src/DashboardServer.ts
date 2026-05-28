@@ -15,6 +15,9 @@ export interface DashboardOptions {
   basePath?: string;
 }
 
+const MAX_INPUT_LENGTH = 10_000;
+const AGENT_TIMEOUT_MS = 60_000;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -37,6 +40,19 @@ function unauthorized(): Response {
       ...corsHeaders,
     },
   });
+}
+
+function badRequest(message: string): Response {
+  return json({ error: message }, 400);
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms)
+    ),
+  ]);
 }
 
 export class DashboardServer {
@@ -95,24 +111,30 @@ export class DashboardServer {
       try {
         body = await req.json() as { agentName?: string; input?: string; sessionId?: string };
       } catch {
-        return json({ error: 'Invalid JSON body' }, 400);
+        return badRequest('Invalid JSON body');
       }
 
       const { agentName, input, sessionId } = body;
-      if (!agentName) return json({ error: '"agentName" is required' }, 400);
-      if (!input?.trim()) return json({ error: '"input" is required' }, 400);
+      if (!agentName) return badRequest('"agentName" is required');
+      if (!input?.trim()) return badRequest('"input" is required');
+      if (input.length > MAX_INPUT_LENGTH) {
+        return badRequest(`Input too long (max ${MAX_INPUT_LENGTH} characters)`);
+      }
 
       const agent = this.agents[agentName];
       if (!agent) return json({ error: `Agent "${agentName}" not found` }, 404);
 
       try {
-        const result = await agent.run(input, {
-          sessionId: sessionId ?? crypto.randomUUID(),
-          env,
-        });
+        const result = await withTimeout(
+          agent.run(input, { sessionId: sessionId ?? crypto.randomUUID(), env }),
+          AGENT_TIMEOUT_MS,
+          `Agent "${agentName}"`,
+        );
         return json(result);
       } catch (err) {
-        return json({ error: String(err) }, 500);
+        const message = err instanceof Error ? err.message : String(err);
+        const isTimeout = message.includes('timed out');
+        return json({ error: message }, isTimeout ? 504 : 500);
       }
     }
 
