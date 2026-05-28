@@ -1,8 +1,19 @@
 import { describe, it, expect, vi } from 'vitest';
 import { AgentLoop } from '../AgentLoop';
-import type { LLMProvider, LLMResponse, Message } from '@moon-wave/types';
+import type { LLMProvider, LLMResponse, Message, StreamEvent } from '@moon-wave/types';
 import type { MemoryManager } from '@moon-wave/memory';
 import type { ToolRegistry } from '../tool';
+
+async function collectStream(stream: ReadableStream<StreamEvent>): Promise<StreamEvent[]> {
+  const events: StreamEvent[] = [];
+  const reader = stream.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    events.push(value);
+  }
+  return events;
+}
 
 function makeMemory(): MemoryManager {
   const store: Message[] = [];
@@ -96,5 +107,76 @@ describe('AgentLoop', () => {
     const tools = makeTools({ loop_tool: 'ok' });
     const loop = new AgentLoop({ agentName: 'bot', systemPrompt: '', provider, memory: makeMemory(), tools, maxIterations: 3 });
     await expect(loop.run('infinite', ctx)).rejects.toThrow('exceeded max iterations (3)');
+  });
+});
+
+describe('AgentLoop.stream()', () => {
+  it('emits text and usage events for a plain response', async () => {
+    const provider: LLMProvider = {
+      chat: vi.fn().mockResolvedValue({ type: 'text', content: 'Hello!' } as LLMResponse),
+      stream: vi.fn(),
+    };
+    const loop = new AgentLoop({ agentName: 'bot', systemPrompt: '', provider, memory: makeMemory(), tools: makeTools(), maxIterations: 5 });
+    const events = await collectStream(loop.stream('Hi', ctx));
+
+    expect(events).toHaveLength(2);
+    expect(events[0]).toEqual({ type: 'text', text: 'Hello!' });
+    expect(events[1]).toEqual({ type: 'usage', iterations: 1, toolCallCount: 0 });
+  });
+
+  it('emits tool_start and tool_end around tool execution', async () => {
+    const provider: LLMProvider = {
+      chat: vi.fn()
+        .mockResolvedValueOnce({ type: 'tool_call', toolCalls: [{ id: 'tc1', name: 'get_time', args: { tz: 'UTC' } }] } as LLMResponse)
+        .mockResolvedValueOnce({ type: 'text', content: 'The time is now.' } as LLMResponse),
+      stream: vi.fn(),
+    };
+    const tools = makeTools({ get_time: '2024-01-01T00:00:00Z' });
+    const loop = new AgentLoop({ agentName: 'bot', systemPrompt: '', provider, memory: makeMemory(), tools, maxIterations: 5 });
+    const events = await collectStream(loop.stream('What time?', ctx));
+
+    expect(events[0]).toEqual({ type: 'tool_start', name: 'get_time', callId: 'tc1', args: { tz: 'UTC' } });
+    expect(events[1]).toEqual({ type: 'tool_end', name: 'get_time', callId: 'tc1', result: '2024-01-01T00:00:00Z' });
+    expect(events[2]).toEqual({ type: 'text', text: 'The time is now.' });
+    expect(events[3]).toMatchObject({ type: 'usage', iterations: 2, toolCallCount: 1 });
+  });
+
+  it('emits tool_end with error field when tool fails', async () => {
+    const provider: LLMProvider = {
+      chat: vi.fn()
+        .mockResolvedValueOnce({ type: 'tool_call', toolCalls: [{ id: 'tc2', name: 'bad_tool', args: {} }] } as LLMResponse)
+        .mockResolvedValueOnce({ type: 'text', content: 'Could not complete.' } as LLMResponse),
+      stream: vi.fn(),
+    };
+    const loop = new AgentLoop({ agentName: 'bot', systemPrompt: '', provider, memory: makeMemory(), tools: makeTools(), maxIterations: 5 });
+    const events = await collectStream(loop.stream('Do it', ctx));
+
+    const toolEnd = events.find((e) => e.type === 'tool_end');
+    expect(toolEnd).toBeDefined();
+    expect((toolEnd as Extract<StreamEvent, { type: 'tool_end' }>).error).toBe('tool bad_tool failed');
+  });
+
+  it('emits tool_start for multiple parallel tool calls', async () => {
+    const provider: LLMProvider = {
+      chat: vi.fn()
+        .mockResolvedValueOnce({
+          type: 'tool_call',
+          toolCalls: [
+            { id: 'ta', name: 'tool_a', args: {} },
+            { id: 'tb', name: 'tool_b', args: {} },
+          ],
+        } as LLMResponse)
+        .mockResolvedValueOnce({ type: 'text', content: 'Both done.' } as LLMResponse),
+      stream: vi.fn(),
+    };
+    const tools = makeTools({ tool_a: 'a', tool_b: 'b' });
+    const loop = new AgentLoop({ agentName: 'bot', systemPrompt: '', provider, memory: makeMemory(), tools, maxIterations: 5 });
+    const events = await collectStream(loop.stream('Run both', ctx));
+
+    const starts = events.filter((e) => e.type === 'tool_start');
+    const ends = events.filter((e) => e.type === 'tool_end');
+    expect(starts).toHaveLength(2);
+    expect(ends).toHaveLength(2);
+    expect((events.at(-1) as Extract<StreamEvent, { type: 'usage' }>).toolCallCount).toBe(2);
   });
 });

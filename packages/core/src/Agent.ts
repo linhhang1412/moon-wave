@@ -1,4 +1,4 @@
-import type { AgentConfig, AgentContext, AgentResult, LLMProvider, ToolDefinition } from '@moon-wave/types';
+import type { AgentConfig, AgentContext, AgentResult, LLMProvider, StreamEvent, ToolDefinition } from '@moon-wave/types';
 import { LLMRouter } from '@moon-wave/providers';
 import { MemoryManager, KVMemoryAdapter, D1MemoryAdapter } from '@moon-wave/memory';
 import { ToolRegistry, tool } from './tool';
@@ -82,5 +82,37 @@ export class Agent {
     });
 
     return loop.run(input, ctx);
+  }
+
+  stream(input: string, ctx: AgentContext): ReadableStream<StreamEvent> {
+    const { readable, writable } = new TransformStream<StreamEvent, StreamEvent>();
+    const writer = writable.getWriter();
+
+    const setup = async () => {
+      const provider = this.buildProvider(ctx.env);
+      const memory = this.buildMemory(ctx.env);
+      const systemPrompt = await this.getSystemPrompt(ctx);
+
+      const loop = new AgentLoop({
+        agentName: this.name,
+        systemPrompt,
+        provider,
+        memory,
+        tools: this.registry,
+        maxIterations: this.config.maxIterations ?? 10,
+      });
+
+      const reader = loop.stream(input, ctx).getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        await writer.write(value);
+      }
+      await writer.close();
+    };
+
+    setup().catch((err) => writer.abort(err));
+
+    return readable;
   }
 }

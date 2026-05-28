@@ -1,5 +1,6 @@
 import type { Channel, IncomingMessage, OutgoingMessage } from './types';
-import { createSSEResponse } from '@moon-wave/core';
+import type { StreamEvent } from '@moon-wave/types';
+import { createSSEResponse, createEventStreamResponse } from '@moon-wave/core';
 
 export interface WebChatConfig {
   apiKey?: string;
@@ -41,5 +42,9 @@ export class WebChatChannel implements Channel {
 
   createSSEResponse(agentStream: ReadableStream<string>): Response {
     return createSSEResponse(agentStream);
+  }
+
+  createEventStreamResponse(agentStream: ReadableStream<StreamEvent>): Response {
+    return createEventStreamResponse(agentStream);
   }
 }

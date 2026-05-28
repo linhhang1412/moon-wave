@@ -29,3 +29,9 @@ export interface AgentResult {
   iterations: number;
   toolCalls: Array<{ name: string; args: unknown; result: unknown }>;
 }
+
+export type StreamEvent =
+  | { type: 'text'; text: string }
+  | { type: 'tool_start'; name: string; callId: string; args: Record<string, unknown> }
+  | { type: 'tool_end'; name: string; callId: string; result: unknown; error?: string }
+  | { type: 'usage'; iterations: number; toolCallCount: number };
