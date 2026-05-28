@@ -10,7 +10,9 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean",
+    "build": "node build-client.mjs && tsup src/index.ts --format esm --dts --clean",
+    "build:client": "node build-client.mjs",
+    "typecheck": "tsc --noEmit && tsc --project src/client/tsconfig.json --noEmit",
     "dev": "tsup src/index.ts --format esm --dts --watch",
     "clean": "rm -rf dist"
   },
@@ -19,6 +21,7 @@
     "@moon-wave/types": "workspace:*"
   },
   "devDependencies": {
+    "esbuild": "^0.25.0",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0"
   },
