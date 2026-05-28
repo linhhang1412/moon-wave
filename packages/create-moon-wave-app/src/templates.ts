@@ -70,19 +70,53 @@ export function indexTs(config: ProjectConfig): string {
   const webchat = new WebChatChannel();
   return webchat.handle(request, channelRunner, { sessionId: 'default', env });`
     : `
-  if (request.method === 'GET') {
-    return new Response(JSON.stringify({ status: 'ok' }), {
-      headers: { 'Content-Type': 'application/json' },
+  const cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', ...cors },
     });
   }
 
-  const { input, sessionId } = await request.json() as { input: string; sessionId?: string };
-  if (!input) return new Response('Missing "input"', { status: 400 });
+  let body: { input?: string; sessionId?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json', ...cors },
+    });
+  }
 
-  const result = await agent.run(input, { sessionId: sessionId ?? 'default', env });
-  return new Response(JSON.stringify(result), {
-    headers: { 'Content-Type': 'application/json' },
-  });`;
+  const { input, sessionId } = body;
+  if (!input?.trim()) {
+    return new Response(JSON.stringify({ error: '"input" is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json', ...cors },
+    });
+  }
+
+  try {
+    const result = await agent.run(input, {
+      sessionId: sessionId ?? crypto.randomUUID(),
+      env,
+    });
+    return new Response(JSON.stringify(result), {
+      headers: { 'Content-Type': 'application/json', ...cors },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...cors },
+    });
+  }`;
 
   const imports = ['import { Agent } from \'@moon-wave/core\';', memoryImport, channelImport]
     .filter(Boolean).join('\n');
