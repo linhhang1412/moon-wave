@@ -1,6 +1,6 @@
 import type { ToolDefinition } from './tool';
 
-export type ProviderName = 'workersai' | 'groq' | 'ollama' | 'google' | 'cerebras';
+export type ProviderName = 'workersai' | 'groq' | 'ollama' | 'google' | 'cerebras' | 'openai' | 'anthropic';
 
 export interface ModelConfig {
   provider: ProviderName;
@@ -14,6 +14,7 @@ export interface AgentConfig {
   tools?: ToolDefinition[];
   memory?: 'kv' | 'd1' | 'none';
   maxIterations?: number;
+  maxMessages?: number;
 }
 
 export interface AgentContext {

@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "@moon-wave/core": "^0.1.0",
-    "@moon-wave/types": "^0.1.0",
-    "@moon-wave/observability": "^0.1.0",
+    "@moon-wave/core": "workspace:*",
+    "@moon-wave/types": "workspace:*",
+    "@moon-wave/observability": "workspace:*",
     "zod": "^3.25.0"
   },
   "devDependencies": {

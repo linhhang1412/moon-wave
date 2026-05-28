@@ -7,13 +7,20 @@ interface MemoryManagerConfig {
   shortTerm?: KVMemoryAdapter;
   longTerm?: D1MemoryAdapter;
   vector?: VectorizeAdapter;
+  maxMessages?: number;
 }
 
+const DEFAULT_MAX_MESSAGES = 100;
+
 export class MemoryManager {
-  constructor(private config: MemoryManagerConfig) {}
+  private maxMessages: number;
+
+  constructor(private config: MemoryManagerConfig) {
+    this.maxMessages = config.maxMessages ?? DEFAULT_MAX_MESSAGES;
+  }
 
   async getMessages(sessionId: string): Promise<Message[]> {
-    if (this.config.longTerm) return this.config.longTerm.getMessages(sessionId);
+    if (this.config.longTerm) return this.config.longTerm.getMessages(sessionId, this.maxMessages);
     if (this.config.shortTerm) return this.config.shortTerm.getMessages(sessionId);
     return [];
   }

@@ -1,18 +1,18 @@
 import type { Message, LLMResponse, ToolSchema } from '@moon-wave/types';
 import { BaseProvider, type RawToolCall } from './base';
 
-export interface GroqConfig {
+export interface OpenAIConfig {
   apiKey: string;
   model: string;
   baseUrl?: string;
 }
 
-export class GroqProvider extends BaseProvider {
+export class OpenAIProvider extends BaseProvider {
   private baseUrl: string;
 
-  constructor(private config: GroqConfig) {
+  constructor(private config: OpenAIConfig) {
     super();
-    this.baseUrl = config.baseUrl ?? 'https://api.groq.com/openai/v1';
+    this.baseUrl = config.baseUrl ?? 'https://api.openai.com/v1';
   }
 
   async chat(messages: Message[], tools?: ToolSchema[]): Promise<LLMResponse> {
@@ -32,7 +32,7 @@ export class GroqProvider extends BaseProvider {
       }),
     });
 
-    if (!res.ok) throw new Error(`Groq API error ${res.status}: ${await res.text()}`);
+    if (!res.ok) throw new Error(`OpenAI API error ${res.status}: ${await res.text()}`);
 
     const data = (await res.json()) as {
       choices: Array<{ message: { content?: string; tool_calls?: unknown[] } }>;
@@ -61,7 +61,7 @@ export class GroqProvider extends BaseProvider {
         });
 
         if (!res.body) {
-          controller.error(new Error('Groq stream response has no body'));
+          controller.error(new Error('OpenAI stream response has no body'));
           return;
         }
         const reader = res.body.getReader();

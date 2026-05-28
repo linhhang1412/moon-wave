@@ -1,5 +1,5 @@
 import type { Message, LLMResponse, ToolSchema } from '@moon-wave/types';
-import { BaseProvider } from './base';
+import { BaseProvider, type RawToolCall } from './base';
 
 export interface OllamaConfig {
   baseUrl: string;
@@ -12,7 +12,7 @@ export class OllamaProvider extends BaseProvider {
   }
 
   async chat(messages: Message[], tools?: ToolSchema[]): Promise<LLMResponse> {
-    const res = await fetch(`${this.config.baseUrl}/api/chat`, {
+    const res = await this.fetch(`${this.config.baseUrl}/api/chat`, {
       method: 'POST',
       body: JSON.stringify({
         model: this.config.model,
@@ -22,16 +22,14 @@ export class OllamaProvider extends BaseProvider {
       }),
     });
 
-    if (!res.ok) {
-      throw new Error(`Ollama error ${res.status}: ${await res.text()}`);
-    }
+    if (!res.ok) throw new Error(`Ollama error ${res.status}: ${await res.text()}`);
 
     const data = (await res.json()) as {
       message: { content?: string; tool_calls?: unknown[] };
     };
 
-    if (data.message.tool_calls?.[0]) {
-      return this.normalizeToolCall(data.message.tool_calls[0] as never);
+    if (data.message.tool_calls?.length) {
+      return this.normalizeToolCalls(data.message.tool_calls as RawToolCall[]);
     }
     return { type: 'text', content: data.message.content ?? '' };
   }

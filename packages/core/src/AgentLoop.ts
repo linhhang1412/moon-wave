@@ -31,33 +31,27 @@ export class AgentLoop {
 
       const response = await provider.chat(messages, toolSchemas);
 
-      if (response.type === 'tool_call' && response.toolCall) {
-        const { id, name, args } = response.toolCall;
-        let result: unknown;
-        let isError = false;
+      if (response.type === 'tool_call' && response.toolCalls?.length) {
+        // Execute all tool calls in parallel, collect results regardless of errors
+        const settled = await Promise.allSettled(
+          response.toolCalls.map((tc) => tools.execute(tc.name, tc.args, ctx)),
+        );
 
-        try {
-          result = await tools.execute(name, args, ctx);
-        } catch (err) {
-          result = { error: err instanceof Error ? err.message : String(err) };
-          isError = true;
-        }
+        for (let j = 0; j < response.toolCalls.length; j++) {
+          const tc = response.toolCalls[j];
+          const outcome = settled[j];
+          const result = outcome.status === 'fulfilled' ? outcome.value : { error: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason) };
 
-        toolCallLog.push({ name, args, result });
+          toolCallLog.push({ name: tc.name, args: tc.args, result });
 
-        await memory.addMessage(ctx.sessionId, {
-          role: 'tool',
-          content: JSON.stringify(result),
-          toolCallId: id,
-        });
-
-        if (isError) {
           await memory.addMessage(ctx.sessionId, {
-            role: 'assistant',
-            content: `Tool "${name}" failed: ${JSON.stringify(result)}`,
+            role: 'tool',
+            content: JSON.stringify(result),
+            toolCallId: tc.id,
           });
-          break;
         }
+
+        // Let the LLM see all tool results and decide how to proceed (including recovering from errors)
         continue;
       }
 

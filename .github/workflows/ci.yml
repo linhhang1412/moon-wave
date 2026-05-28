@@ -25,6 +25,10 @@ jobs:
 
       - run: pnpm build --filter='!apps/docs' --filter='!apps/mcp-server'
 
+      - run: pnpm typecheck --filter='!apps/docs' --filter='!apps/mcp-server'
+
+      - run: pnpm test --filter='!apps/docs' --filter='!apps/mcp-server'
+
   release:
     needs: build
     runs-on: ubuntu-latest

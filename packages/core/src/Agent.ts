@@ -1,4 +1,4 @@
-import type { AgentConfig, AgentContext, AgentResult, ToolDefinition } from '@moon-wave/types';
+import type { AgentConfig, AgentContext, AgentResult, LLMProvider, ToolDefinition } from '@moon-wave/types';
 import { LLMRouter } from '@moon-wave/providers';
 import { MemoryManager, KVMemoryAdapter, D1MemoryAdapter } from '@moon-wave/memory';
 import { ToolRegistry, tool } from './tool';
@@ -9,6 +9,8 @@ export { tool };
 export class Agent {
   readonly name: string;
   private registry = new ToolRegistry();
+  private _provider: LLMProvider | undefined;
+  private _memory: MemoryManager | undefined;
 
   constructor(private config: AgentConfig) {
     this.name = config.name;
@@ -20,7 +22,7 @@ export class Agent {
     return this;
   }
 
-  private buildProvider(env: Record<string, unknown>) {
+  private buildProvider(env: Record<string, unknown>): LLMProvider {
     const { provider, model } = this.config.model;
     const router = new LLMRouter();
 
@@ -40,6 +42,12 @@ export class Agent {
       case 'cerebras':
         router.register('cerebras', { apiKey: env.CEREBRAS_API_KEY as string, model });
         break;
+      case 'openai':
+        router.register('openai', { apiKey: env.OPENAI_API_KEY as string, model });
+        break;
+      case 'anthropic':
+        router.register('anthropic', { apiKey: env.ANTHROPIC_API_KEY as string, model });
+        break;
     }
 
     return router.get(provider);
@@ -50,7 +58,18 @@ export class Agent {
     return new MemoryManager({
       shortTerm: type !== 'none' ? new KVMemoryAdapter(env.KV as never) : undefined,
       longTerm: type === 'd1' ? new D1MemoryAdapter(env.DB as never) : undefined,
+      maxMessages: this.config.maxMessages,
     });
+  }
+
+  private getProvider(env: Record<string, unknown>): LLMProvider {
+    if (!this._provider) this._provider = this.buildProvider(env);
+    return this._provider;
+  }
+
+  private getMemory(env: Record<string, unknown>): MemoryManager {
+    if (!this._memory) this._memory = this.buildMemory(env);
+    return this._memory;
   }
 
   private async getSystemPrompt(ctx: AgentContext): Promise<string> {
@@ -61,8 +80,8 @@ export class Agent {
   }
 
   async run(input: string, ctx: AgentContext): Promise<AgentResult> {
-    const provider = this.buildProvider(ctx.env);
-    const memory = this.buildMemory(ctx.env);
+    const provider = this.getProvider(ctx.env);
+    const memory = this.getMemory(ctx.env);
     const systemPrompt = await this.getSystemPrompt(ctx);
 
     const loop = new AgentLoop({
@@ -76,5 +95,4 @@ export class Agent {
 
     return loop.run(input, ctx);
   }
-
 }

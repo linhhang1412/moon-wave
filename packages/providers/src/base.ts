@@ -1,4 +1,12 @@
 import type { LLMProvider, Message, LLMResponse, ToolSchema } from '@moon-wave/types';
+import { fetchWithRetry } from './retry';
+
+export interface RawToolCall {
+  id?: string;
+  name?: string;
+  function?: { name?: string; arguments?: string | Record<string, unknown> };
+  arguments?: Record<string, unknown>;
+}
 
 export abstract class BaseProvider implements LLMProvider {
   abstract chat(messages: Message[], tools?: ToolSchema[]): Promise<LLMResponse>;
@@ -17,24 +25,20 @@ export abstract class BaseProvider implements LLMProvider {
     });
   }
 
-  protected normalizeToolCall(toolCall: {
-    id?: string;
-    name?: string;
-    function?: { name?: string; arguments?: string | Record<string, unknown> };
-    arguments?: Record<string, unknown>;
-  }): LLMResponse {
-    const name = toolCall.function?.name ?? toolCall.name ?? '';
-    const rawArgs = toolCall.function?.arguments ?? toolCall.arguments ?? {};
-    const args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
-
+  protected normalizeToolCalls(rawToolCalls: RawToolCall[]): LLMResponse {
     return {
       type: 'tool_call',
-      toolCall: {
-        id: toolCall.id ?? crypto.randomUUID(),
-        name,
-        args,
-      },
+      toolCalls: rawToolCalls.map((tc) => {
+        const name = tc.function?.name ?? tc.name ?? '';
+        const rawArgs = tc.function?.arguments ?? tc.arguments ?? {};
+        const args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
+        return { id: tc.id ?? crypto.randomUUID(), name, args };
+      }),
     };
+  }
+
+  protected fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+    return fetchWithRetry(input, init);
   }
 
   protected toOpenAITools(tools: ToolSchema[]) {
