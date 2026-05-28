@@ -1,6 +1,6 @@
 {
   "name": "create-moon-wave-app",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Create a new moon-wave agent project",
   "type": "module",
   "bin": {

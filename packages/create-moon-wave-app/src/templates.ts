@@ -106,7 +106,7 @@ export function indexTs(config: ProjectConfig): string {
   try {
     const result = await agent.run(input, {
       sessionId: sessionId ?? crypto.randomUUID(),
-      env,
+      env: env as unknown as Record<string, unknown>,
     });
     return new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json', ...cors },
@@ -160,6 +160,7 @@ export function packageJson(config: ProjectConfig): string {
     },
     dependencies: deps,
     devDependencies: {
+      '@cloudflare/workers-types': '^4.0.0',
       wrangler: '^3.0.0',
       typescript: '^5.5.0',
     },
@@ -201,6 +202,7 @@ export function tsconfigJson(): string {
       module: 'ESNext',
       moduleResolution: 'Bundler',
       lib: ['ES2022'],
+      types: ['@cloudflare/workers-types'],
       strict: true,
       skipLibCheck: true,
     },
