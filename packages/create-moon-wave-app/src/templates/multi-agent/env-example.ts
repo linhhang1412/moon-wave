@@ -1,7 +1,7 @@
 import type { ProjectConfig } from '../../types.js';
 import { providerEnvKey } from '../constants.js';
 
-export function envExample(config: ProjectConfig): string {
+export function multiAgentEnvExample(config: ProjectConfig): string {
   const { provider, channel } = config;
   const envKey = providerEnvKey[provider];
   const lines: string[] = [];

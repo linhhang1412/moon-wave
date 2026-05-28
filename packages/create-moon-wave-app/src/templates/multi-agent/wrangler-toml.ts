@@ -1,6 +1,6 @@
 import type { ProjectConfig } from '../../types.js';
 
-export function wranglerToml(config: ProjectConfig): string {
+export function multiAgentWranglerToml(config: ProjectConfig): string {
   const { name, provider, memory } = config;
 
   const kvBinding =

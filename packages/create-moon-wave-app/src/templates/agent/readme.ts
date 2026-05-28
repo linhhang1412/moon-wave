@@ -1,17 +1,14 @@
-import type { ProjectConfig, Provider } from '../../types.js';
-
-const providerEnvKey: Record<Provider, string> = {
-  groq: 'GROQ_API_KEY',
-  google: 'GOOGLE_AI_KEY',
-  cerebras: 'CEREBRAS_API_KEY',
-  workersai: '',
-  openai: 'OPENAI_API_KEY',
-  anthropic: 'ANTHROPIC_API_KEY',
-};
+import type { ProjectConfig } from '../../types.js';
+import { providerEnvKey } from '../constants.js';
 
 export function readme(config: ProjectConfig): string {
-  const { name, provider, dashboard } = config;
+  const { name, provider, channel, dashboard } = config;
   const envKey = providerEnvKey[provider];
+
+  const sharedFiles =
+    channel === 'none'
+      ? '│   ├── env.ts          # Environment types\n│   └── cors.ts         # CORS headers'
+      : '│   └── env.ts          # Environment types';
 
   const dashboardSection = dashboard
     ? `
@@ -41,8 +38,7 @@ src/
 │       ├── handler.ts  # Request handler
 │       └── tools.ts    # Feature tools
 ├── shared/
-│   ├── env.ts          # Environment types
-│   └── cors.ts         # CORS headers
+${sharedFiles}
 └── index.ts            # Entry point
 \`\`\`
 

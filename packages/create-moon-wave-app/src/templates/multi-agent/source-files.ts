@@ -32,20 +32,55 @@ export function sharedCorsTs(): string {
 `;
 }
 
-// ─── src/features/chat/agent.ts ───────────────────────────────────────────────
+// ─── src/features/chat/agents/research.ts ────────────────────────────────────
 
-export function chatAgentTs(config: ProjectConfig): string {
-  const { provider, memory, name } = config;
-  const model = providerModel[provider];
-
+export function researchAgentTs(config: ProjectConfig): string {
+  const { memory } = config;
   return `import { Agent } from '@moon-wave/core';
 
-export function createChatAgent() {
+export function createResearchAgent() {
   return new Agent({
-    name: '${name}',
-    model: { provider: '${provider}', model: '${model}' },
-    systemPrompt: 'You are a helpful assistant.',
+    name: 'research',
+    model: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
+    systemPrompt: 'You are a research specialist. Find facts, analyze data, and summarize information accurately.',
     memory: '${memory}',
+  });
+}
+`;
+}
+
+// ─── src/features/chat/agents/writer.ts ──────────────────────────────────────
+
+export function writerAgentTs(config: ProjectConfig): string {
+  const { memory } = config;
+  return `import { Agent } from '@moon-wave/core';
+
+export function createWriterAgent() {
+  return new Agent({
+    name: 'writer',
+    model: { provider: 'groq', model: 'llama-3.3-70b-versatile' },
+    systemPrompt: 'You are a writing specialist. Transform research and ideas into clear, engaging content.',
+    memory: '${memory}',
+  });
+}
+`;
+}
+
+// ─── src/features/chat/network.ts ────────────────────────────────────────────
+
+export function chatNetworkTs(config: ProjectConfig): string {
+  const { provider } = config;
+  const model = providerModel[provider];
+
+  return `import { AgentNetwork } from '@moon-wave/multi-agent';
+import { createResearchAgent } from './agents/research';
+import { createWriterAgent } from './agents/writer';
+
+export function createChatNetwork() {
+  return new AgentNetwork({
+    name: 'supervisor',
+    routerModel: { provider: '${provider}', model: '${model}' },
+    agents: [createResearchAgent(), createWriterAgent()],
   });
 }
 `;
@@ -56,7 +91,7 @@ export function createChatAgent() {
 export function chatToolsTs(): string {
   return `import { tool } from '@moon-wave/core';
 
-// Add your feature tools here. Example:
+// Add shared tools available to all agents. Example:
 // const myTool = tool({
 //   name: 'my_tool',
 //   description: 'Description of what the tool does',
@@ -73,7 +108,7 @@ export function chatToolsTs(): string {
 // });
 
 export { tool };
-export const chatTools: ReturnType<typeof tool>[] = [];
+export const sharedTools: ReturnType<typeof tool>[] = [];
 `;
 }
 
@@ -84,13 +119,12 @@ export function chatHandlerTs(config: ProjectConfig): string {
 
   if (channel === 'telegram') {
     return `import { TelegramChannel, ChannelRunner } from '@moon-wave/channels';
-import { createChatAgent } from './agent';
-import { chatTools } from './tools';
+import { createChatNetwork } from './network';
 import type { Env } from '../../shared/env';
 
 export async function chatHandler(request: Request, env: Env): Promise<Response> {
-  const agent = createChatAgent().use(...chatTools);
-  const runner = new ChannelRunner(agent);
+  const network = createChatNetwork();
+  const runner = new ChannelRunner(network as never);
   const telegram = new TelegramChannel(env.TELEGRAM_TOKEN);
   return telegram.handle(request, runner, {
     sessionId: 'default',
@@ -102,13 +136,12 @@ export async function chatHandler(request: Request, env: Env): Promise<Response>
 
   if (channel === 'webchat') {
     return `import { WebChatChannel, ChannelRunner } from '@moon-wave/channels';
-import { createChatAgent } from './agent';
-import { chatTools } from './tools';
+import { createChatNetwork } from './network';
 import type { Env } from '../../shared/env';
 
 export async function chatHandler(request: Request, env: Env): Promise<Response> {
-  const agent = createChatAgent().use(...chatTools);
-  const runner = new ChannelRunner(agent);
+  const network = createChatNetwork();
+  const runner = new ChannelRunner(network as never);
   const webchat = new WebChatChannel();
   return webchat.handle(request, runner, {
     sessionId: 'default',
@@ -120,8 +153,7 @@ export async function chatHandler(request: Request, env: Env): Promise<Response>
 
   // channel === 'none' — plain HTTP with CORS
   return `import { corsHeaders } from '../../shared/cors';
-import { createChatAgent } from './agent';
-import { chatTools } from './tools';
+import { createChatNetwork } from './network';
 import type { Env } from '../../shared/env';
 
 export async function chatHandler(request: Request, env: Env): Promise<Response> {
@@ -154,9 +186,9 @@ export async function chatHandler(request: Request, env: Env): Promise<Response>
     });
   }
 
-  const agent = createChatAgent().use(...chatTools);
+  const network = createChatNetwork();
   try {
-    const result = await agent.run(input, {
+    const result = await network.run(input, {
       sessionId: sessionId ?? crypto.randomUUID(),
       env: env as unknown as Record<string, unknown>,
     });
@@ -180,13 +212,13 @@ export function indexTs(config: ProjectConfig): string {
 
   if (dashboard) {
     return `import { chatHandler } from './features/chat/handler';
-import { createChatAgent } from './features/chat/agent';
+import { createChatNetwork } from './features/chat/network';
 import { createDashboard } from '@moon-wave/dashboard';
 import type { Env } from './shared/env';
 
-const agent = createChatAgent();
+const network = createChatNetwork();
 const dashboard = createDashboard({
-  agents: { '${name}': agent },
+  agents: { '${name}': network as never },
   auth: { token: undefined }, // set DASHBOARD_TOKEN secret to protect
 });
 

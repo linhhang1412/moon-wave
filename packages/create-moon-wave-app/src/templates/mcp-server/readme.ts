@@ -1,13 +1,5 @@
-import type { ProjectConfig, Provider } from '../../types.js';
-
-const providerEnvKey: Record<Provider, string> = {
-  groq: 'GROQ_API_KEY',
-  google: 'GOOGLE_AI_KEY',
-  cerebras: 'CEREBRAS_API_KEY',
-  workersai: '',
-  openai: 'OPENAI_API_KEY',
-  anthropic: 'ANTHROPIC_API_KEY',
-};
+import type { ProjectConfig } from '../../types.js';
+import { providerEnvKey } from '../constants.js';
 
 export function mcpReadme(config: ProjectConfig): string {
   const { name, provider } = config;
