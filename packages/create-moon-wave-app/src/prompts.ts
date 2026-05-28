@@ -1,5 +1,5 @@
 import * as p from '@clack/prompts';
-import type { ProjectConfig, Provider, Memory, Channel, Template } from './types.js';
+import type { ProjectConfig, Provider, Memory, Channel, Template, PackageManager } from './types.js';
 
 export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
   p.intro('create-moon-wave-app');
@@ -16,30 +16,33 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
     message: 'Template:',
     options: [
       { value: 'agent', label: 'Agent', hint: 'Cloudflare Worker with HTTP endpoint' },
+      { value: 'multi-agent', label: 'Multi-Agent', hint: 'Supervisor + specialist agents (AgentNetwork)' },
       { value: 'mcp-server', label: 'MCP Server', hint: 'Expose agents as tools in Claude Code' },
     ],
   });
 
   if (p.isCancel(template)) { p.cancel('Cancelled.'); process.exit(0); }
 
-  const provider = await p.select<{ value: Provider; label: string }[], Provider>({
+  const provider = await p.select<{ value: Provider; label: string; hint: string }[], Provider>({
     message: 'LLM Provider:',
     options: [
-      { value: 'groq', label: 'Groq  (fast, free tier)' },
-      { value: 'google', label: 'Google Gemini  (generous free tier)' },
-      { value: 'cerebras', label: 'Cerebras  (ultra-fast inference)' },
-      { value: 'workersai', label: 'Cloudflare Workers AI  (no API key needed)' },
+      { value: 'groq', label: 'Groq', hint: 'llama-3.3-70b-versatile  (fast, free tier)' },
+      { value: 'google', label: 'Google Gemini', hint: 'gemini-2.0-flash  (generous free tier)' },
+      { value: 'openai', label: 'OpenAI', hint: 'gpt-4o-mini  (industry standard)' },
+      { value: 'anthropic', label: 'Anthropic', hint: 'claude-3-5-haiku  (best reasoning)' },
+      { value: 'cerebras', label: 'Cerebras', hint: 'llama3.3-70b  (ultra-fast inference)' },
+      { value: 'workersai', label: 'Cloudflare Workers AI', hint: '@cf/meta/llama-3.1-8b  (no API key needed)' },
     ],
   });
 
   if (p.isCancel(provider)) { p.cancel('Cancelled.'); process.exit(0); }
 
-  // memory + channel + dashboard only relevant for agent template
+  // memory + channel + dashboard apply to agent and multi-agent templates
   let memory: Memory = 'none';
   let channel: Channel = 'none';
   let dashboard = false;
 
-  if (template === 'agent') {
+  if (template === 'agent' || template === 'multi-agent') {
     const memoryAnswer = await p.select<{ value: Memory; label: string; hint: string }[], Memory>({
       message: 'Memory:',
       options: [
@@ -71,8 +74,21 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
   }
 
   const install = await p.confirm({ message: 'Install dependencies?' });
-
   if (p.isCancel(install)) { p.cancel('Cancelled.'); process.exit(0); }
+
+  let packageManager: PackageManager = 'npm';
+  if (install) {
+    const pkgAnswer = await p.select<{ value: PackageManager; label: string }[], PackageManager>({
+      message: 'Package manager:',
+      options: [
+        { value: 'npm', label: 'npm' },
+        { value: 'pnpm', label: 'pnpm  (recommended)' },
+        { value: 'yarn', label: 'Yarn' },
+      ],
+    });
+    if (p.isCancel(pkgAnswer)) { p.cancel('Cancelled.'); process.exit(0); }
+    packageManager = pkgAnswer as PackageManager;
+  }
 
   return {
     name: String(name).trim(),
@@ -82,5 +98,6 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
     channel,
     dashboard,
     install: Boolean(install),
+    packageManager,
   };
 }
