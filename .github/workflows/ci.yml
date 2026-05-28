@@ -21,11 +21,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm build --filter='!apps/docs' --filter='!apps/mcp-server'
+      - run: pnpm build --filter='!@moon-wave/docs' --filter='!mcp-server'
 
-      - run: pnpm typecheck --filter='!apps/docs' --filter='!apps/mcp-server'
+      - run: pnpm typecheck --filter='!@moon-wave/docs' --filter='!mcp-server'
 
-      - run: pnpm test --filter='!apps/docs' --filter='!apps/mcp-server'
+      - run: pnpm test --filter='!@moon-wave/docs' --filter='!mcp-server'
 
   release:
     needs: build
