@@ -1,6 +1,7 @@
 import type { AgentConfig, AgentContext, AgentPublicConfig, AgentResult, LLMProvider, ToolDefinition } from '@moon-wave/types';
 import { LLMRouter } from '@moon-wave/providers';
 import { MemoryManager, KVMemoryAdapter, D1MemoryAdapter } from '@moon-wave/memory';
+import { SafetyLayer, SafetyBlockedError } from '@moon-wave/safety';
 import { ToolRegistry, tool } from './tool';
 import { AgentLoop } from './AgentLoop';
 
@@ -82,6 +83,7 @@ export class Agent {
     const provider = this.buildProvider(ctx.env);
     const memory = this.buildMemory(ctx.env);
     const systemPrompt = await this.getSystemPrompt(ctx);
+    const safety = this.config.safety ? new SafetyLayer(this.config.safety) : undefined;
 
     const loop = new AgentLoop({
       agentName: this.name,
@@ -90,8 +92,20 @@ export class Agent {
       memory,
       tools: this.registry,
       maxIterations: this.config.maxIterations ?? 10,
+      safety,
     });
 
-    return loop.run(input, ctx);
+    try {
+      return await loop.run(input, ctx);
+    } catch (err) {
+      if (err instanceof SafetyBlockedError) {
+        return {
+          output: this.config.safety?.fallbackMessage ?? "I'm sorry, I can't help with that.",
+          iterations: 0,
+          toolCalls: [],
+        };
+      }
+      throw err;
+    }
   }
 }

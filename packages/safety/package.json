@@ -1,7 +1,7 @@
 {
-  "name": "@moon-wave/core",
-  "version": "0.1.2",
-  "description": "Core agent loop and tool registry for moon-wave",
+  "name": "@moon-wave/safety",
+  "version": "0.1.0",
+  "description": "AI Response Safety Layer for moon-wave agents",
   "type": "module",
   "exports": {
     ".": {
@@ -17,10 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@moon-wave/types": "workspace:*",
-    "@moon-wave/providers": "workspace:*",
-    "@moon-wave/memory": "workspace:*",
-    "@moon-wave/safety": "workspace:*"
+    "@moon-wave/types": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
