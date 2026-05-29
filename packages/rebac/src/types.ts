@@ -22,6 +22,8 @@ export interface ReBACUser {
   name: string;
   email: string;
   createdAt: string;
+  /** Present only when freshly generated — never returned by listUsers() */
+  apiKey?: string;
 }
 
 export interface CheckResult {

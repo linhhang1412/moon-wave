@@ -584,13 +584,22 @@ function renderPermUsers(): void {
   }
   el.innerHTML = `<table class="w-full text-sm">
     <thead><tr class="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-      <th class="pb-2 pr-4">ID</th><th class="pb-2 pr-4">Name</th><th class="pb-2">Email</th>
+      <th class="pb-2 pr-3">ID</th><th class="pb-2 pr-3">Name</th><th class="pb-2 pr-3">Email</th><th class="pb-2">API Key</th>
     </tr></thead>
     <tbody>
-      ${permUsers.map(u => `<tr class="border-b border-gray-100 dark:border-gray-800">
-        <td class="py-2 pr-4 font-mono text-xs text-gray-500">${esc(u.id)}</td>
-        <td class="py-2 pr-4 text-gray-800 dark:text-gray-200">${esc(u.name)}</td>
-        <td class="py-2 text-gray-600 dark:text-gray-400">${esc(u.email)}</td>
+      ${permUsers.map(u => `<tr class="border-b border-gray-100 dark:border-gray-800 group">
+        <td class="py-2 pr-3 font-mono text-xs text-gray-500">${esc(u.id)}</td>
+        <td class="py-2 pr-3 text-gray-800 dark:text-gray-200">${esc(u.name)}</td>
+        <td class="py-2 pr-3 text-gray-600 dark:text-gray-400">${esc(u.email)}</td>
+        <td class="py-2">
+          <div class="flex items-center gap-2">
+            <span id="apikey-display-${esc(u.id)}" class="font-mono text-xs text-gray-400 dark:text-gray-500">••••••••</span>
+            <button data-gen-key="${esc(u.id)}"
+              class="text-xs text-brand-600 dark:text-brand-400 hover:underline">Generate</button>
+            <button data-revoke-key="${esc(u.id)}"
+              class="text-xs text-red-500 hover:underline opacity-0 group-hover:opacity-100">Revoke</button>
+          </div>
+        </td>
       </tr>`).join('')}
     </tbody>
   </table>`;
@@ -765,6 +774,39 @@ async function migrateReBAC(): Promise<void> {
   }
 }
 
+async function generateApiKey(userId: string): Promise<void> {
+  try {
+    const res = await fetch(`${BASE}/api/permissions/users/${encodeURIComponent(userId)}/generate-key`, { method: 'POST' });
+    const data = await res.json() as { apiKey?: string; error?: string };
+    if (!res.ok || !data.apiKey) {
+      alert(data.error ?? 'Failed to generate key');
+      return;
+    }
+    const display = document.getElementById(`apikey-display-${userId}`);
+    if (display) {
+      display.textContent = data.apiKey;
+      display.className = 'font-mono text-xs text-green-600 dark:text-green-400 break-all select-all cursor-text';
+      display.title = 'Copy this key — it will not be shown again';
+    }
+  } catch {
+    alert('Network error');
+  }
+}
+
+async function revokeApiKey(userId: string): Promise<void> {
+  if (!confirm(`Revoke API key for user "${userId}"? They will lose access immediately.`)) return;
+  try {
+    await fetch(`${BASE}/api/permissions/users/${encodeURIComponent(userId)}/revoke-key`, { method: 'DELETE' });
+    const display = document.getElementById(`apikey-display-${userId}`);
+    if (display) {
+      display.textContent = '••••••••';
+      display.className = 'font-mono text-xs text-gray-400 dark:text-gray-500';
+    }
+  } catch {
+    alert('Network error');
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 const savedDark = localStorage.getItem(STORAGE_DARK_KEY);
@@ -812,8 +854,13 @@ document.getElementById('perm-add-user-btn')?.addEventListener('click', () => vo
 document.getElementById('perm-add-tuple-btn')?.addEventListener('click', () => void addPermTuple());
 document.getElementById('perm-check-btn')?.addEventListener('click', () => void checkPermission());
 getEl('tab-content-permissions').addEventListener('click', (e: MouseEvent) => {
-  const btn = (e.target as Element).closest<HTMLButtonElement>('[data-delete-tuple]');
-  if (btn?.dataset.tuple) void deletePermTuple(btn.dataset.tuple);
+  const target = e.target as Element;
+  const deleteBtn = target.closest<HTMLButtonElement>('[data-delete-tuple]');
+  if (deleteBtn?.dataset.tuple) { void deletePermTuple(deleteBtn.dataset.tuple); return; }
+  const genBtn = target.closest<HTMLButtonElement>('[data-gen-key]');
+  if (genBtn?.dataset.genKey) { void generateApiKey(genBtn.dataset.genKey); return; }
+  const revokeBtn = target.closest<HTMLButtonElement>('[data-revoke-key]');
+  if (revokeBtn?.dataset.revokeKey) { void revokeApiKey(revokeBtn.dataset.revokeKey); }
 });
 
 loadAgents().catch((err: unknown) => console.error('Failed to load agents:', err));

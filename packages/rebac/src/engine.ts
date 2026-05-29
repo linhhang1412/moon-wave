@@ -1,5 +1,5 @@
 import type { D1DatabaseBinding, ObjectType, ReBACTuple, ReBACTupleRecord, ReBACUser, RelationType } from './types';
-import { REBAC_MIGRATION } from './schema';
+import { REBAC_MIGRATION, REBAC_MIGRATION_V2 } from './schema';
 
 interface TupleRow {
   id: number;
@@ -16,6 +16,7 @@ interface UserRow {
   id: string;
   name: string;
   email: string;
+  api_key: string | null;
   created_at: string;
 }
 
@@ -26,6 +27,12 @@ export class D1ReBAC {
     const statements = REBAC_MIGRATION.split(';\n').map(s => s.trim()).filter(Boolean);
     for (const sql of statements) {
       await this.db.prepare(sql + ';').bind().run();
+    }
+    // Add api_key column to existing installations — ignore error if already exists
+    try {
+      await this.db.prepare(REBAC_MIGRATION_V2).bind().run();
+    } catch {
+      // Column already exists — safe to ignore
     }
   }
 
@@ -126,6 +133,30 @@ export class D1ReBAC {
     return false;
   }
 
+  /**
+   * Convenience: returns true if user has owner OR editor relation on agent.
+   * Use before allowing an agent run.
+   */
+  async canRunAgent(userId: string, agentName: string): Promise<boolean> {
+    const [isOwner, isEditor] = await Promise.all([
+      this.check('user', userId, 'owner', 'agent', agentName),
+      this.check('user', userId, 'editor', 'agent', agentName),
+    ]);
+    return isOwner || isEditor;
+  }
+
+  /**
+   * Convenience: returns true if user has any relation (owner/editor/viewer) on agent.
+   */
+  async canViewAgent(userId: string, agentName: string): Promise<boolean> {
+    const [isOwner, isEditor, isViewer] = await Promise.all([
+      this.check('user', userId, 'owner', 'agent', agentName),
+      this.check('user', userId, 'editor', 'agent', agentName),
+      this.check('user', userId, 'viewer', 'agent', agentName),
+    ]);
+    return isOwner || isEditor || isViewer;
+  }
+
   async listSubjectsForObject(
     objectType: ObjectType,
     objectId: string,
@@ -168,9 +199,7 @@ export class D1ReBAC {
 
   async createUser(id: string, name: string, email: string): Promise<void> {
     await this.db
-      .prepare(
-        `INSERT INTO rebac_users (id, name, email) VALUES (?, ?, ?)`,
-      )
+      .prepare(`INSERT INTO rebac_users (id, name, email) VALUES (?, ?, ?)`)
       .bind(id, name, email)
       .run();
   }
@@ -190,6 +219,39 @@ export class D1ReBAC {
       .first<UserRow>();
     return row ? rowToUser(row) : null;
   }
+
+  /**
+   * Look up a user by their API key.
+   * Returns null if the key is invalid or not found.
+   */
+  async getUserByApiKey(apiKey: string): Promise<ReBACUser | null> {
+    const row = await this.db
+      .prepare('SELECT id, name, email, created_at FROM rebac_users WHERE api_key = ? LIMIT 1')
+      .bind(apiKey)
+      .first<UserRow>();
+    return row ? rowToUser(row) : null;
+  }
+
+  /**
+   * Generate a new random API key for a user.
+   * Returns the new key (only shown once — not retrievable later).
+   */
+  async generateApiKey(userId: string): Promise<string> {
+    const key = generateRandomKey();
+    await this.db
+      .prepare('UPDATE rebac_users SET api_key = ? WHERE id = ?')
+      .bind(key, userId)
+      .run();
+    return key;
+  }
+
+  /** Revoke the API key for a user. */
+  async revokeApiKey(userId: string): Promise<void> {
+    await this.db
+      .prepare('UPDATE rebac_users SET api_key = NULL WHERE id = ?')
+      .bind(userId)
+      .run();
+  }
 }
 
 function rowToTuple(row: TupleRow): ReBACTupleRecord {
@@ -207,4 +269,10 @@ function rowToTuple(row: TupleRow): ReBACTupleRecord {
 
 function rowToUser(row: UserRow): ReBACUser {
   return { id: row.id, name: row.name, email: row.email, createdAt: row.created_at };
+}
+
+function generateRandomKey(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return 'mwk_' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }

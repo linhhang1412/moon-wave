@@ -76,6 +76,8 @@ export interface ReBACUser {
   name: string;
   email: string;
   createdAt: string;
+  /** Only present immediately after generation — not stored in plain text */
+  apiKey?: string;
 }
 
 export interface ReBACTupleRecord {
