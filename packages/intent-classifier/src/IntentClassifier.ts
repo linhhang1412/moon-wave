@@ -19,7 +19,12 @@ unrecoverable, mixed or contradictory intent, or insufficient context to determi
 Score each intent from 0.0 to 1.0 (scores do not need to sum to 1.0).
 
 Return ONLY a valid JSON object in this exact format — no markdown, no explanation:
-{"faq": 0.0, "chitchat": 0.0, "fallback": 0.0}`;
+{"faq": 0.0, "chitchat": 0.0, "fallback": 0.0}
+
+Examples:
+Input: "Xin chào bạn!" → {"faq": 0.02, "chitchat": 0.96, "fallback": 0.02}
+Input: "Giờ làm việc của shop là mấy giờ?" → {"faq": 0.92, "chitchat": 0.04, "fallback": 0.04}
+Input: "asdf ??? jjj" → {"faq": 0.0, "chitchat": 0.0, "fallback": 1.0}`;
 
 function defaultLogger(result: IntentClassificationResult): void {
   console.log(
@@ -38,9 +43,13 @@ function defaultLogger(result: IntentClassificationResult): void {
 
 export class IntentClassifier {
   private logger: (result: IntentClassificationResult) => void | Promise<void>;
+  private maxRetries: number;
+  private minConfidence: number;
 
   constructor(private config: IntentClassifierConfig) {
     this.logger = config.logger ?? defaultLogger;
+    this.maxRetries = config.maxRetries ?? 1;
+    this.minConfidence = config.minConfidence ?? 0;
   }
 
   async classify(input: string, context?: string): Promise<IntentClassificationResult> {
@@ -53,9 +62,27 @@ export class IntentClassifier {
       { role: 'user', content: userContent },
     ];
 
-    const response = await this.config.provider.chat(messages);
-    const scores = this.parseScores(response.content ?? '');
-    const intent = this.pickWinner(scores);
+    let scores: IntentScores | null = null;
+    let attempts = 0;
+
+    while (attempts <= this.maxRetries) {
+      const response = await this.config.provider.chat(messages);
+      scores = this.parseScores(response.content ?? '');
+      if (scores !== null) break;
+      attempts++;
+    }
+
+    // All attempts failed — treat as unclassifiable
+    if (scores === null) {
+      scores = { faq: 0, chitchat: 0, fallback: 1 };
+    }
+
+    let intent = this.pickWinner(scores);
+
+    // Override to fallback when no intent is confident enough
+    if (this.minConfidence > 0 && scores[intent] < this.minConfidence) {
+      intent = 'fallback';
+    }
 
     const result: IntentClassificationResult = {
       intent,
@@ -71,19 +98,25 @@ export class IntentClassifier {
     return result;
   }
 
-  private parseScores(raw: string): IntentScores {
+  private parseScores(raw: string): IntentScores | null {
     try {
       const jsonMatch = raw.match(/\{[\s\S]*?\}/);
-      if (!jsonMatch) throw new Error('no JSON block in response');
+      if (!jsonMatch) return null;
       const parsed = JSON.parse(jsonMatch[0]) as Record<string, number>;
+      if (
+        typeof parsed['faq'] !== 'number' ||
+        typeof parsed['chitchat'] !== 'number' ||
+        typeof parsed['fallback'] !== 'number'
+      ) {
+        return null;
+      }
       return {
-        faq: this.clamp(Number(parsed['faq'] ?? 0)),
-        chitchat: this.clamp(Number(parsed['chitchat'] ?? 0)),
-        fallback: this.clamp(Number(parsed['fallback'] ?? 0)),
+        faq: this.clamp(parsed['faq']),
+        chitchat: this.clamp(parsed['chitchat']),
+        fallback: this.clamp(parsed['fallback']),
       };
     } catch {
-      // LLM returned unparseable output — treat as fallback
-      return { faq: 0, chitchat: 0, fallback: 1 };
+      return null;
     }
   }
 

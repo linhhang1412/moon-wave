@@ -98,6 +98,62 @@ describe('IntentClassifier', () => {
     expect(() => new Date(result.timestamp)).not.toThrow();
     expect(new Date(result.timestamp).toISOString()).toBe(result.timestamp);
   });
+
+  it('overrides to fallback when winning score is below minConfidence', async () => {
+    const classifier = new IntentClassifier({
+      provider: mockProvider('{"faq": 0.45, "chitchat": 0.35, "fallback": 0.20}'),
+      logger: vi.fn(),
+      minConfidence: 0.6,
+    });
+    const result = await classifier.classify('ambiguous message');
+    expect(result.intent).toBe('fallback');
+  });
+
+  it('does not override when winning score meets minConfidence', async () => {
+    const classifier = new IntentClassifier({
+      provider: mockProvider('{"faq": 0.7, "chitchat": 0.2, "fallback": 0.1}'),
+      logger: vi.fn(),
+      minConfidence: 0.6,
+    });
+    const result = await classifier.classify('What are your hours?');
+    expect(result.intent).toBe('faq');
+  });
+
+  it('retries LLM call on parse failure up to maxRetries times', async () => {
+    const provider: LLMProvider = {
+      chat: vi
+        .fn()
+        .mockResolvedValueOnce({ type: 'text', content: 'not json' } satisfies LLMResponse)
+        .mockResolvedValueOnce({
+          type: 'text',
+          content: '{"faq": 0.85, "chitchat": 0.1, "fallback": 0.05}',
+        } satisfies LLMResponse),
+      stream: vi.fn(),
+    };
+    const classifier = new IntentClassifier({ provider, logger: vi.fn(), maxRetries: 1 });
+    const result = await classifier.classify('What are your hours?');
+    expect(result.intent).toBe('faq');
+    expect(provider.chat).toHaveBeenCalledTimes(2);
+  });
+
+  it('falls back to fallback after exhausting all retries', async () => {
+    const provider: LLMProvider = {
+      chat: vi.fn().mockResolvedValue({ type: 'text', content: 'bad output' } satisfies LLMResponse),
+      stream: vi.fn(),
+    };
+    const classifier = new IntentClassifier({ provider, logger: vi.fn(), maxRetries: 2 });
+    const result = await classifier.classify('something');
+    expect(result.intent).toBe('fallback');
+    // original attempt + 2 retries = 3 total
+    expect(provider.chat).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not retry when first parse succeeds', async () => {
+    const provider = mockProvider('{"faq": 0.9, "chitchat": 0.05, "fallback": 0.05}');
+    const classifier = new IntentClassifier({ provider, logger: vi.fn(), maxRetries: 2 });
+    await classifier.classify('What are your prices?');
+    expect(provider.chat).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('createIntentStep', () => {
