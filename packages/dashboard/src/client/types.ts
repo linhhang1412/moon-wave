@@ -70,3 +70,25 @@ export interface MetricsData {
   toolCallRate: number;
   errorRate: number;
 }
+
+export interface ReBACUser {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+export interface ReBACTupleRecord {
+  id: number;
+  objectType: string;
+  objectId: string;
+  relation: string;
+  subjectType: string;
+  subjectId: string;
+  subjectRelation?: string;
+  createdAt: string;
+}
+
+export interface PermissionCheckResult {
+  allowed: boolean;
+}
