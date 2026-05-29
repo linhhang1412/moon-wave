@@ -1,0 +1,38 @@
+{
+  "name": "@moon-wave/intent-classifier",
+  "version": "0.1.0",
+  "description": "LLM-powered intent classifier (faq / chitchat / fallback) with workflow routing for moon-wave",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@moon-wave/types": "workspace:*",
+    "@moon-wave/workflow": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "author": "linhhang1412",
+  "license": "MIT",
+  "homepage": "https://github.com/linhhang1412/moon-wave#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linhhang1412/moon-wave.git"
+  },
+  "bugs": {
+    "url": "https://github.com/linhhang1412/moon-wave/issues"
+  }
+}
