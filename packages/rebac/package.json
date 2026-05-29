@@ -1,0 +1,25 @@
+{
+  "name": "@moon-wave/rebac",
+  "version": "0.1.0",
+  "description": "Relationship-Based Access Control (ReBAC) engine for moon-wave — Zanzibar-style tuple model backed by Cloudflare D1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "dev": "tsup src/index.ts --format esm --dts --watch"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "author": "linhhang1412",
+  "license": "MIT"
+}

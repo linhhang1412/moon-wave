@@ -1,6 +1,7 @@
 import type {
   AgentData, AgentRunResult, AppendMessageOptions, ChatHistoryEntry, ToolCallData,
   TraceRecord, SessionRecord, AgentPublicConfig, MetricsData,
+  ReBACUser, ReBACTupleRecord, PermissionCheckResult,
 } from './types';
 
 declare const marked: { parse(text: string): string };
@@ -17,7 +18,7 @@ let chatHistory: ChatHistoryEntry[] = [];
 let lastInput = '';
 let previousAgent = '';
 
-type TabName = 'playground' | 'agents' | 'traces' | 'sessions' | 'metrics';
+type TabName = 'playground' | 'agents' | 'traces' | 'sessions' | 'metrics' | 'permissions';
 
 function getEl<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -43,7 +44,7 @@ function toggleDark(): void {
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
 function showTab(name: TabName): void {
-  const tabs: TabName[] = ['playground', 'agents', 'traces', 'sessions', 'metrics'];
+  const tabs: TabName[] = ['playground', 'agents', 'traces', 'sessions', 'metrics', 'permissions'];
   tabs.forEach(t => {
     getEl('tab-content-' + t).classList.toggle('hidden', t !== name);
     const btn = getEl('tab-' + t);
@@ -54,6 +55,7 @@ function showTab(name: TabName): void {
   if (name === 'traces') void loadTraces();
   if (name === 'sessions') void loadSessions();
   if (name === 'metrics') void loadMetrics();
+  if (name === 'permissions') void loadPermissions();
 }
 
 // ── Agents ────────────────────────────────────────────────────────────────────
@@ -546,6 +548,265 @@ function renderToolCalls(toolCalls: ToolCallData[] | undefined): void {
   }).join('');
 }
 
+// ── Permissions (ReBAC) ───────────────────────────────────────────────────────
+
+let permUsers: ReBACUser[] = [];
+let permTuples: ReBACTupleRecord[] = [];
+
+async function loadPermissions(): Promise<void> {
+  try {
+    const [usersRes, tuplesRes] = await Promise.all([
+      fetch(BASE + '/api/permissions/users'),
+      fetch(BASE + '/api/permissions/tuples'),
+    ]);
+    if (usersRes.ok) {
+      permUsers = (await usersRes.json()) as ReBACUser[];
+    } else {
+      const err = (await usersRes.json()) as { error?: string };
+      getEl('perm-users-list').innerHTML = `<div class="text-amber-600 dark:text-amber-400 text-sm p-4">${esc(err.error ?? 'Error loading users')}</div>`;
+    }
+    if (tuplesRes.ok) {
+      permTuples = (await tuplesRes.json()) as ReBACTupleRecord[];
+    }
+    renderPermUsers();
+    renderPermTuples();
+    populatePermUserSelects();
+  } catch {
+    getEl('perm-users-list').innerHTML = '<div class="text-red-500 text-sm p-4">Failed to load permissions data.</div>';
+  }
+}
+
+function renderPermUsers(): void {
+  const el = getEl('perm-users-list');
+  if (!permUsers.length) {
+    el.innerHTML = '<div class="text-center text-gray-400 dark:text-gray-500 py-6 text-sm">No users yet.</div>';
+    return;
+  }
+  el.innerHTML = `<table class="w-full text-sm">
+    <thead><tr class="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+      <th class="pb-2 pr-3">ID</th><th class="pb-2 pr-3">Name</th><th class="pb-2 pr-3">Email</th><th class="pb-2">API Key</th>
+    </tr></thead>
+    <tbody>
+      ${permUsers.map(u => `<tr class="border-b border-gray-100 dark:border-gray-800 group">
+        <td class="py-2 pr-3 font-mono text-xs text-gray-500">${esc(u.id)}</td>
+        <td class="py-2 pr-3 text-gray-800 dark:text-gray-200">${esc(u.name)}</td>
+        <td class="py-2 pr-3 text-gray-600 dark:text-gray-400">${esc(u.email)}</td>
+        <td class="py-2">
+          <div class="flex items-center gap-2">
+            <span id="apikey-display-${esc(u.id)}" class="font-mono text-xs text-gray-400 dark:text-gray-500">••••••••</span>
+            <button data-gen-key="${esc(u.id)}"
+              class="text-xs text-brand-600 dark:text-brand-400 hover:underline">Generate</button>
+            <button data-revoke-key="${esc(u.id)}"
+              class="text-xs text-red-500 hover:underline opacity-0 group-hover:opacity-100">Revoke</button>
+          </div>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function renderPermTuples(): void {
+  const el = getEl('perm-tuples-list');
+  if (!permTuples.length) {
+    el.innerHTML = '<div class="text-center text-gray-400 dark:text-gray-500 py-6 text-sm">No access rules yet.</div>';
+    return;
+  }
+  el.innerHTML = `<table class="w-full text-sm">
+    <thead><tr class="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+      <th class="pb-2 pr-3">Subject</th><th class="pb-2 pr-3">Relation</th><th class="pb-2 pr-3">Object</th><th class="pb-2"></th>
+    </tr></thead>
+    <tbody>
+      ${permTuples.map(t => {
+        const subject = t.subjectRelation
+          ? `${t.subjectType}:${t.subjectId}#${t.subjectRelation}`
+          : `${t.subjectType}:${t.subjectId}`;
+        const obj = `${t.objectType}:${t.objectId}`;
+        const relColor = t.relation === 'owner' ? 'text-purple-600 dark:text-purple-400'
+          : t.relation === 'editor' ? 'text-blue-600 dark:text-blue-400'
+          : t.relation === 'viewer' ? 'text-green-600 dark:text-green-400'
+          : t.relation === 'admin' ? 'text-red-600 dark:text-red-400'
+          : 'text-gray-600 dark:text-gray-400';
+        return `<tr class="border-b border-gray-100 dark:border-gray-800 group">
+          <td class="py-2 pr-3 font-mono text-xs text-gray-700 dark:text-gray-300">${esc(subject)}</td>
+          <td class="py-2 pr-3"><span class="font-semibold ${relColor}">${esc(t.relation)}</span></td>
+          <td class="py-2 pr-3 font-mono text-xs text-gray-700 dark:text-gray-300">${esc(obj)}</td>
+          <td class="py-2 text-right">
+            <button data-delete-tuple="${t.id}" data-tuple='${JSON.stringify(t)}'
+              class="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded">Remove</button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function populatePermUserSelects(): void {
+  const sel = document.getElementById('perm-check-subject-id') as HTMLSelectElement | null;
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— select user —</option>' +
+    permUsers.map(u => `<option value="${esc(u.id)}">${esc(u.name)} (${esc(u.id)})</option>`).join('');
+  if (current) sel.value = current;
+}
+
+async function addPermUser(): Promise<void> {
+  const id = (getEl<HTMLInputElement>('perm-user-id').value ?? '').trim();
+  const name = (getEl<HTMLInputElement>('perm-user-name').value ?? '').trim();
+  const email = (getEl<HTMLInputElement>('perm-user-email').value ?? '').trim();
+  const errEl = getEl('perm-user-error');
+  errEl.textContent = '';
+  if (!id || !name || !email) { errEl.textContent = 'All fields are required.'; return; }
+  try {
+    const res = await fetch(BASE + '/api/permissions/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name, email }),
+    });
+    const data = await res.json() as { ok?: boolean; error?: string };
+    if (!res.ok) { errEl.textContent = data.error ?? 'Error'; return; }
+    getEl<HTMLInputElement>('perm-user-id').value = '';
+    getEl<HTMLInputElement>('perm-user-name').value = '';
+    getEl<HTMLInputElement>('perm-user-email').value = '';
+    await loadPermissions();
+  } catch {
+    errEl.textContent = 'Network error.';
+  }
+}
+
+async function addPermTuple(): Promise<void> {
+  const errEl = getEl('perm-tuple-error');
+  errEl.textContent = '';
+  const objectType = (getEl<HTMLSelectElement>('perm-tuple-object-type').value) as string;
+  const objectId = (getEl<HTMLInputElement>('perm-tuple-object-id').value ?? '').trim();
+  const relation = (getEl<HTMLSelectElement>('perm-tuple-relation').value) as string;
+  const subjectType = (getEl<HTMLSelectElement>('perm-tuple-subject-type').value) as string;
+  const subjectId = (getEl<HTMLInputElement>('perm-tuple-subject-id').value ?? '').trim();
+  const subjectRelation = (getEl<HTMLInputElement>('perm-tuple-subject-relation').value ?? '').trim() || undefined;
+  if (!objectType || !objectId || !relation || !subjectType || !subjectId) {
+    errEl.textContent = 'All fields except Subject Relation are required.';
+    return;
+  }
+  try {
+    const res = await fetch(BASE + '/api/permissions/tuples', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ objectType, objectId, relation, subjectType, subjectId, subjectRelation }),
+    });
+    const data = await res.json() as { ok?: boolean; error?: string };
+    if (!res.ok) { errEl.textContent = data.error ?? 'Error'; return; }
+    getEl<HTMLInputElement>('perm-tuple-object-id').value = '';
+    getEl<HTMLInputElement>('perm-tuple-subject-id').value = '';
+    getEl<HTMLInputElement>('perm-tuple-subject-relation').value = '';
+    await loadPermissions();
+  } catch {
+    errEl.textContent = 'Network error.';
+  }
+}
+
+async function deletePermTuple(tupleJson: string): Promise<void> {
+  try {
+    const tuple = JSON.parse(tupleJson) as ReBACTupleRecord;
+    await fetch(BASE + '/api/permissions/tuples', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        objectType: tuple.objectType, objectId: tuple.objectId,
+        relation: tuple.relation, subjectType: tuple.subjectType,
+        subjectId: tuple.subjectId, subjectRelation: tuple.subjectRelation,
+      }),
+    });
+    await loadPermissions();
+  } catch { /* silent */ }
+}
+
+async function checkPermission(): Promise<void> {
+  const resultEl = getEl('perm-check-result');
+  resultEl.innerHTML = '';
+  const subjectType = (getEl<HTMLSelectElement>('perm-check-subject-type').value) as string;
+  const subjectId = (getEl<HTMLInputElement>('perm-check-subject-id').value ?? '').trim();
+  const relation = (getEl<HTMLSelectElement>('perm-check-relation').value) as string;
+  const objectType = (getEl<HTMLSelectElement>('perm-check-object-type').value) as string;
+  const objectId = (getEl<HTMLInputElement>('perm-check-object-id').value ?? '').trim();
+  if (!subjectType || !subjectId || !relation || !objectType || !objectId) {
+    resultEl.innerHTML = '<span class="text-gray-500 text-sm">Fill all fields to check.</span>';
+    return;
+  }
+  try {
+    const res = await fetch(BASE + '/api/permissions/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subjectType, subjectId, relation, objectType, objectId }),
+    });
+    const data = await res.json() as PermissionCheckResult & { error?: string };
+    if (!res.ok) {
+      resultEl.innerHTML = `<span class="text-red-500 text-sm">${esc(data.error ?? 'Error')}</span>`;
+      return;
+    }
+    if (data.allowed) {
+      resultEl.innerHTML = '<span class="text-green-600 dark:text-green-400 font-semibold text-base">✓ Allowed</span>';
+    } else {
+      resultEl.innerHTML = '<span class="text-red-600 dark:text-red-400 font-semibold text-base">✗ Denied</span>';
+    }
+  } catch {
+    resultEl.innerHTML = '<span class="text-red-500 text-sm">Network error.</span>';
+  }
+}
+
+async function migrateReBAC(): Promise<void> {
+  const btn = getEl<HTMLButtonElement>('perm-migrate-btn');
+  const resultEl = getEl('perm-migrate-result');
+  btn.disabled = true;
+  btn.textContent = 'Migrating…';
+  try {
+    const res = await fetch(BASE + '/api/permissions/migrate', { method: 'POST' });
+    const data = await res.json() as { ok?: boolean; error?: string };
+    if (res.ok) {
+      resultEl.innerHTML = '<span class="text-green-600 dark:text-green-400 text-sm">Schema ready.</span>';
+      await loadPermissions();
+    } else {
+      resultEl.innerHTML = `<span class="text-red-500 text-sm">${esc(data.error ?? 'Error')}</span>`;
+    }
+  } catch {
+    resultEl.innerHTML = '<span class="text-red-500 text-sm">Network error.</span>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Init Schema';
+  }
+}
+
+async function generateApiKey(userId: string): Promise<void> {
+  try {
+    const res = await fetch(`${BASE}/api/permissions/users/${encodeURIComponent(userId)}/generate-key`, { method: 'POST' });
+    const data = await res.json() as { apiKey?: string; error?: string };
+    if (!res.ok || !data.apiKey) {
+      alert(data.error ?? 'Failed to generate key');
+      return;
+    }
+    const display = document.getElementById(`apikey-display-${userId}`);
+    if (display) {
+      display.textContent = data.apiKey;
+      display.className = 'font-mono text-xs text-green-600 dark:text-green-400 break-all select-all cursor-text';
+      display.title = 'Copy this key — it will not be shown again';
+    }
+  } catch {
+    alert('Network error');
+  }
+}
+
+async function revokeApiKey(userId: string): Promise<void> {
+  if (!confirm(`Revoke API key for user "${userId}"? They will lose access immediately.`)) return;
+  try {
+    await fetch(`${BASE}/api/permissions/users/${encodeURIComponent(userId)}/revoke-key`, { method: 'DELETE' });
+    const display = document.getElementById(`apikey-display-${userId}`);
+    if (display) {
+      display.textContent = '••••••••';
+      display.className = 'font-mono text-xs text-gray-400 dark:text-gray-500';
+    }
+  } catch {
+    alert('Network error');
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 const savedDark = localStorage.getItem(STORAGE_DARK_KEY);
@@ -556,6 +817,7 @@ getEl('tab-agents').addEventListener('click', () => showTab('agents'));
 getEl('tab-traces').addEventListener('click', () => showTab('traces'));
 getEl('tab-sessions').addEventListener('click', () => showTab('sessions'));
 getEl('tab-metrics').addEventListener('click', () => showTab('metrics'));
+getEl('tab-permissions').addEventListener('click', () => showTab('permissions'));
 getEl('dark-btn').addEventListener('click', () => toggleDark());
 getEl('export-btn').addEventListener('click', () => exportChat());
 getEl('clear-btn').addEventListener('click', () => clearChat());
@@ -586,5 +848,19 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
 document.getElementById('refresh-traces-btn')?.addEventListener('click', () => void loadTraces());
 document.getElementById('refresh-sessions-btn')?.addEventListener('click', () => void loadSessions());
 document.getElementById('refresh-metrics-btn')?.addEventListener('click', () => void loadMetrics());
+
+document.getElementById('perm-migrate-btn')?.addEventListener('click', () => void migrateReBAC());
+document.getElementById('perm-add-user-btn')?.addEventListener('click', () => void addPermUser());
+document.getElementById('perm-add-tuple-btn')?.addEventListener('click', () => void addPermTuple());
+document.getElementById('perm-check-btn')?.addEventListener('click', () => void checkPermission());
+getEl('tab-content-permissions').addEventListener('click', (e: MouseEvent) => {
+  const target = e.target as Element;
+  const deleteBtn = target.closest<HTMLButtonElement>('[data-delete-tuple]');
+  if (deleteBtn?.dataset.tuple) { void deletePermTuple(deleteBtn.dataset.tuple); return; }
+  const genBtn = target.closest<HTMLButtonElement>('[data-gen-key]');
+  if (genBtn?.dataset.genKey) { void generateApiKey(genBtn.dataset.genKey); return; }
+  const revokeBtn = target.closest<HTMLButtonElement>('[data-revoke-key]');
+  if (revokeBtn?.dataset.revokeKey) { void revokeApiKey(revokeBtn.dataset.revokeKey); }
+});
 
 loadAgents().catch((err: unknown) => console.error('Failed to load agents:', err));

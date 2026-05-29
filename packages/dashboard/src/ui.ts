@@ -99,6 +99,10 @@ export function buildDashboardHtml(basePath: string): string {
       class="px-3 py-1.5 rounded-md text-sm font-medium tab-btn inactive-tab">
       Metrics
     </button>
+    <button id="tab-permissions"
+      class="px-3 py-1.5 rounded-md text-sm font-medium tab-btn inactive-tab">
+      Permissions
+    </button>
     <button id="dark-btn" title="Toggle dark mode"
       class="ml-1 p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
       <svg id="icon-moon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -225,6 +229,136 @@ export function buildDashboardHtml(basePath: string): string {
     </div>
     <div id="metrics-content">
       <div class="text-center text-gray-400 dark:text-gray-500 py-12">Loading metrics...</div>
+    </div>
+  </div>
+
+  <!-- Permissions Tab -->
+  <div id="tab-content-permissions" class="hidden space-y-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-base font-semibold text-gray-700 dark:text-gray-300">ReBAC Permissions</h2>
+      <div class="flex items-center gap-2">
+        <button id="perm-migrate-btn"
+          class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1.5 rounded-md font-medium">Init Schema</button>
+        <span id="perm-migrate-result" class="text-xs"></span>
+      </div>
+    </div>
+
+    <!-- Users panel -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <h3 class="font-medium text-gray-800 dark:text-gray-200 text-sm">Users</h3>
+      </div>
+      <div class="p-5">
+        <div id="perm-users-list" class="mb-5">
+          <div class="text-center text-gray-400 dark:text-gray-500 py-6 text-sm">No users yet.</div>
+        </div>
+        <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+          <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">Add User</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+            <input id="perm-user-id" type="text" placeholder="ID (e.g. alice)"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"/>
+            <input id="perm-user-name" type="text" placeholder="Name"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"/>
+            <input id="perm-user-email" type="email" placeholder="Email"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"/>
+          </div>
+          <div class="flex items-center gap-3">
+            <button id="perm-add-user-btn"
+              class="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors">Add User</button>
+            <span id="perm-user-error" class="text-red-500 text-xs"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Access Rules panel -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700">
+        <h3 class="font-medium text-gray-800 dark:text-gray-200 text-sm">Access Rules</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Relationship tuples: subject → relation → object</p>
+      </div>
+      <div class="p-5">
+        <div id="perm-tuples-list" class="mb-5 overflow-x-auto">
+          <div class="text-center text-gray-400 dark:text-gray-500 py-6 text-sm">No access rules yet.</div>
+        </div>
+        <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+          <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">Add Rule</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
+            <select id="perm-tuple-subject-type"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="user">user</option>
+              <option value="organization">organization</option>
+            </select>
+            <input id="perm-tuple-subject-id" type="text" placeholder="Subject ID"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"/>
+            <input id="perm-tuple-subject-relation" type="text" placeholder="Subject relation (optional, e.g. member)"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"/>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+            <select id="perm-tuple-relation"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="owner">owner</option>
+              <option value="editor">editor</option>
+              <option value="viewer">viewer</option>
+              <option value="member">member</option>
+              <option value="admin">admin</option>
+            </select>
+            <select id="perm-tuple-object-type"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="agent">agent</option>
+              <option value="organization">organization</option>
+              <option value="session">session</option>
+            </select>
+            <input id="perm-tuple-object-id" type="text" placeholder="Object ID (e.g. summarizer)"
+              class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"/>
+          </div>
+          <div class="flex items-center gap-3">
+            <button id="perm-add-tuple-btn"
+              class="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors">Add Rule</button>
+            <span id="perm-tuple-error" class="text-red-500 text-xs"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Check Access panel -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700">
+        <h3 class="font-medium text-gray-800 dark:text-gray-200 text-sm">Check Access</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Test: does subject X have relation R on object Y?</p>
+      </div>
+      <div class="p-5">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3 items-end">
+          <select id="perm-check-subject-type"
+            class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="user">user</option>
+            <option value="organization">organization</option>
+          </select>
+          <input id="perm-check-subject-id" type="text" placeholder="Subject ID"
+            class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"/>
+          <select id="perm-check-relation"
+            class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="owner">owner</option>
+            <option value="editor">editor</option>
+            <option value="viewer">viewer</option>
+            <option value="member">member</option>
+            <option value="admin">admin</option>
+          </select>
+          <select id="perm-check-object-type"
+            class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="agent">agent</option>
+            <option value="organization">organization</option>
+            <option value="session">session</option>
+          </select>
+          <input id="perm-check-object-id" type="text" placeholder="Object ID"
+            class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"/>
+        </div>
+        <div class="flex items-center gap-4">
+          <button id="perm-check-btn"
+            class="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors">Check</button>
+          <span id="perm-check-result" class="text-base"></span>
+        </div>
+      </div>
     </div>
   </div>
 
