@@ -17,3 +17,12 @@ export const providerModel: Record<Provider, string> = {
   openai: 'gpt-4o-mini',
   anthropic: 'claude-3-5-haiku-20241022',
 };
+
+export const providerModels: Record<Provider, string[]> = {
+  groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
+  google: ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+  cerebras: ['llama3.3-70b', 'llama3.1-8b'],
+  workersai: ['@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/mistral/mistral-7b-instruct-v0.2'],
+  openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
+  anthropic: ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001', 'claude-3-5-sonnet-20241022'],
+};

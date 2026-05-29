@@ -8,6 +8,7 @@ export interface ProjectConfig {
   name: string;
   template: Template;
   provider: Provider;
+  model: string;
   memory: Memory;
   channel: Channel;
   dashboard: boolean;

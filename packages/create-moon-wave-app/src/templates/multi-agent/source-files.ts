@@ -1,5 +1,5 @@
 import type { ProjectConfig } from '../../types.js';
-import { providerEnvKey, providerModel } from '../constants.js';
+import { providerEnvKey } from '../constants.js';
 
 // ─── src/shared/env.ts ────────────────────────────────────────────────────────
 
@@ -69,8 +69,7 @@ export function createWriterAgent() {
 // ─── src/features/chat/network.ts ────────────────────────────────────────────
 
 export function chatNetworkTs(config: ProjectConfig): string {
-  const { provider } = config;
-  const model = providerModel[provider];
+  const { provider, model } = config;
 
   return `import { AgentNetwork } from '@moon-wave/multi-agent';
 import { createResearchAgent } from './agents/research';
@@ -124,12 +123,9 @@ import type { Env } from '../../shared/env';
 
 export async function chatHandler(request: Request, env: Env): Promise<Response> {
   const network = createChatNetwork();
-  const runner = new ChannelRunner(network as never);
   const telegram = new TelegramChannel(env.TELEGRAM_TOKEN);
-  return telegram.handle(request, runner, {
-    sessionId: 'default',
-    env: env as unknown as Record<string, unknown>,
-  });
+  const runner = new ChannelRunner(telegram, network);
+  return runner.handle(request, env as unknown as Record<string, unknown>);
 }
 `;
   }
@@ -141,12 +137,9 @@ import type { Env } from '../../shared/env';
 
 export async function chatHandler(request: Request, env: Env): Promise<Response> {
   const network = createChatNetwork();
-  const runner = new ChannelRunner(network as never);
   const webchat = new WebChatChannel();
-  return webchat.handle(request, runner, {
-    sessionId: 'default',
-    env: env as unknown as Record<string, unknown>,
-  });
+  const runner = new ChannelRunner(webchat, network);
+  return runner.handle(request, env as unknown as Record<string, unknown>);
 }
 `;
   }

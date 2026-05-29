@@ -21,7 +21,7 @@ export async function generateMcpFiles(config: ProjectConfig, root: string): Pro
     writeFile(join(root, 'package.json'), mcpPackageJson(config)),
     writeFile(join(root, 'wrangler.toml'), mcpWranglerToml(config)),
     writeFile(join(root, 'tsconfig.json'), tsconfigJson()),
-    writeFile(join(root, '.env.example'), mcpEnvExample(config)),
+    writeFile(join(root, '.dev.vars.example'), mcpEnvExample(config)),
     writeFile(join(root, '.gitignore'), gitignore()),
     writeFile(join(root, 'README.md'), mcpReadme(config)),
   ]);

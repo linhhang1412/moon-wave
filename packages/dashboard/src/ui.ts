@@ -78,7 +78,7 @@ export function buildDashboardHtml(basePath: string): string {
   </svg>
   <span class="font-semibold text-gray-800 dark:text-white text-lg">moon-wave</span>
   <span class="text-gray-400 text-sm ml-1 hidden sm:inline">dashboard</span>
-  <div class="ml-auto flex items-center gap-1" id="nav-tabs">
+  <div class="ml-auto flex items-center gap-1 flex-wrap" id="nav-tabs">
     <button id="tab-playground"
       class="px-3 py-1.5 rounded-md text-sm font-medium tab-btn active-tab">
       Playground
@@ -86,6 +86,18 @@ export function buildDashboardHtml(basePath: string): string {
     <button id="tab-agents"
       class="px-3 py-1.5 rounded-md text-sm font-medium tab-btn inactive-tab">
       Agents
+    </button>
+    <button id="tab-traces"
+      class="px-3 py-1.5 rounded-md text-sm font-medium tab-btn inactive-tab">
+      Traces
+    </button>
+    <button id="tab-sessions"
+      class="px-3 py-1.5 rounded-md text-sm font-medium tab-btn inactive-tab">
+      Sessions
+    </button>
+    <button id="tab-metrics"
+      class="px-3 py-1.5 rounded-md text-sm font-medium tab-btn inactive-tab">
+      Metrics
     </button>
     <button id="dark-btn" title="Toggle dark mode"
       class="ml-1 p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -177,6 +189,42 @@ export function buildDashboardHtml(basePath: string): string {
   <div id="tab-content-agents" class="hidden">
     <div id="agents-list" class="grid gap-4">
       <div class="text-center text-gray-400 dark:text-gray-500 py-12">Loading agents...</div>
+    </div>
+  </div>
+
+  <!-- Traces Tab -->
+  <div id="tab-content-traces" class="hidden">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-semibold text-gray-700 dark:text-gray-300">Recent runs</h2>
+      <button id="refresh-traces-btn"
+        class="text-xs text-brand-600 dark:text-brand-400 hover:underline">Refresh</button>
+    </div>
+    <div id="traces-list" class="space-y-3">
+      <div class="text-center text-gray-400 dark:text-gray-500 py-12">Loading traces...</div>
+    </div>
+  </div>
+
+  <!-- Sessions Tab -->
+  <div id="tab-content-sessions" class="hidden">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-semibold text-gray-700 dark:text-gray-300">Sessions</h2>
+      <button id="refresh-sessions-btn"
+        class="text-xs text-brand-600 dark:text-brand-400 hover:underline">Refresh</button>
+    </div>
+    <div id="sessions-list">
+      <div class="text-center text-gray-400 dark:text-gray-500 py-12">Loading sessions...</div>
+    </div>
+  </div>
+
+  <!-- Metrics Tab -->
+  <div id="tab-content-metrics" class="hidden">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-semibold text-gray-700 dark:text-gray-300">Performance metrics</h2>
+      <button id="refresh-metrics-btn"
+        class="text-xs text-brand-600 dark:text-brand-400 hover:underline">Refresh</button>
+    </div>
+    <div id="metrics-content">
+      <div class="text-center text-gray-400 dark:text-gray-500 py-12">Loading metrics...</div>
     </div>
   </div>
 

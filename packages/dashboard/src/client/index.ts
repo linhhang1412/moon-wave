@@ -1,9 +1,10 @@
-import type { AgentData, AgentRunResult, AppendMessageOptions, ChatHistoryEntry, ToolCallData } from './types';
+import type {
+  AgentData, AgentRunResult, AppendMessageOptions, ChatHistoryEntry, ToolCallData,
+  TraceRecord, SessionRecord, AgentPublicConfig, MetricsData,
+} from './types';
 
-// CDN libraries injected via HTML <script> tags
 declare const marked: { parse(text: string): string };
 declare const hljs: { highlightElement(block: Element): void };
-// BASE is injected by the server as `const BASE = '<basePath>';` before this bundle
 declare const BASE: string;
 
 const STORAGE_SESSION_KEY = 'mw_session_id';
@@ -15,6 +16,8 @@ let agentsData: AgentData[] = [];
 let chatHistory: ChatHistoryEntry[] = [];
 let lastInput = '';
 let previousAgent = '';
+
+type TabName = 'playground' | 'agents' | 'traces' | 'sessions' | 'metrics';
 
 function getEl<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -39,8 +42,8 @@ function toggleDark(): void {
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
-function showTab(name: 'playground' | 'agents'): void {
-  const tabs = ['playground', 'agents'] as const;
+function showTab(name: TabName): void {
+  const tabs: TabName[] = ['playground', 'agents', 'traces', 'sessions', 'metrics'];
   tabs.forEach(t => {
     getEl('tab-content-' + t).classList.toggle('hidden', t !== name);
     const btn = getEl('tab-' + t);
@@ -48,6 +51,9 @@ function showTab(name: 'playground' | 'agents'): void {
       (t === name ? 'active-tab' : 'inactive-tab');
   });
   if (name === 'agents') renderAgents();
+  if (name === 'traces') void loadTraces();
+  if (name === 'sessions') void loadSessions();
+  if (name === 'metrics') void loadMetrics();
 }
 
 // ── Agents ────────────────────────────────────────────────────────────────────
@@ -95,19 +101,198 @@ function renderAgents(): void {
           <h3 class="font-semibold text-gray-800 dark:text-white">${esc(a.name)}</h3>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">${esc(a.description ?? 'No description')}</p>
         </div>
-        <button data-agent-name="${esc(a.name)}"
-          class="shrink-0 text-xs bg-brand-50 dark:bg-blue-900/30 text-brand-700 dark:text-blue-300 hover:bg-brand-100 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg font-medium transition-colors">
-          Open in Playground
-        </button>
+        <div class="shrink-0 flex gap-2">
+          <button data-config-name="${esc(a.name)}"
+            class="text-xs bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 px-3 py-1.5 rounded-lg font-medium transition-colors">
+            Config
+          </button>
+          <button data-agent-name="${esc(a.name)}"
+            class="text-xs bg-brand-50 dark:bg-blue-900/30 text-brand-700 dark:text-blue-300 hover:bg-brand-100 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-lg font-medium transition-colors">
+            Open in Playground
+          </button>
+        </div>
       </div>
+      <div id="config-panel-${esc(a.name)}" class="hidden mt-4 pt-4 border-t border-gray-100 dark:border-gray-700"></div>
     </div>
   `).join('');
+}
+
+async function toggleAgentConfig(name: string): Promise<void> {
+  const panel = document.getElementById('config-panel-' + name);
+  if (!panel) return;
+  if (!panel.classList.contains('hidden')) {
+    panel.classList.add('hidden');
+    return;
+  }
+  panel.innerHTML = '<p class="text-sm text-gray-400">Loading config…</p>';
+  panel.classList.remove('hidden');
+  try {
+    const res = await fetch(BASE + '/api/agents/' + encodeURIComponent(name) + '/config');
+    const cfg = (await res.json()) as AgentPublicConfig;
+    panel.innerHTML = `
+      <div class="grid sm:grid-cols-2 gap-3 text-sm">
+        <div><span class="font-medium text-gray-600 dark:text-gray-400">Provider:</span> <span class="text-gray-800 dark:text-gray-200">${esc(cfg.model?.provider ?? '—')}</span></div>
+        <div><span class="font-medium text-gray-600 dark:text-gray-400">Model:</span> <span class="text-gray-800 dark:text-gray-200">${esc(cfg.model?.model ?? '—')}</span></div>
+        <div><span class="font-medium text-gray-600 dark:text-gray-400">Memory:</span> <span class="text-gray-800 dark:text-gray-200">${esc(cfg.memory ?? '—')}</span></div>
+        <div><span class="font-medium text-gray-600 dark:text-gray-400">Max iterations:</span> <span class="text-gray-800 dark:text-gray-200">${esc(String(cfg.maxIterations ?? '—'))}</span></div>
+      </div>
+      ${cfg.tools?.length ? `
+        <div class="mt-3">
+          <p class="font-medium text-gray-600 dark:text-gray-400 text-sm mb-1">Tools (${cfg.tools.length}):</p>
+          <ul class="space-y-1">${cfg.tools.map(t => `<li class="text-sm"><span class="font-mono text-brand-600 dark:text-brand-400">${esc(t.name)}</span> — ${esc(t.description)}</li>`).join('')}</ul>
+        </div>` : ''}
+      ${cfg.systemPrompt ? `
+        <details class="mt-3">
+          <summary class="cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-400">System prompt</summary>
+          <pre class="mt-2 text-xs bg-gray-50 dark:bg-gray-900 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap text-gray-700 dark:text-gray-300">${esc(cfg.systemPrompt)}</pre>
+        </details>` : ''}
+    `;
+  } catch {
+    panel.innerHTML = '<p class="text-sm text-red-400">Failed to load config.</p>';
+  }
 }
 
 function selectAgent(name: string): void {
   getEl<HTMLSelectElement>('agent-select').value = name;
   previousAgent = name;
   showTab('playground');
+}
+
+// ── Traces ────────────────────────────────────────────────────────────────────
+
+async function loadTraces(): Promise<void> {
+  const el = getEl('traces-list');
+  el.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-8">Loading traces…</p>';
+  try {
+    const res = await fetch(BASE + '/api/traces');
+    const traces = (await res.json()) as TraceRecord[];
+    if (!traces.length) {
+      el.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-8">No traces yet. Run an agent in the Playground.</p>';
+      return;
+    }
+    el.innerHTML = traces.map(t => `
+      <details class="bg-white dark:bg-gray-800 rounded-xl border ${t.error ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'} shadow-sm overflow-hidden">
+        <summary class="px-5 py-3 cursor-pointer flex items-center gap-3 flex-wrap hover:bg-gray-50 dark:hover:bg-gray-750">
+          ${t.error ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400">Error</span>' : ''}
+          <span class="font-medium text-gray-800 dark:text-white text-sm">${esc(t.agentName)}</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">${esc(t.input)}</span>
+          <div class="ml-auto flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500 shrink-0">
+            <span>${t.durationMs}ms</span>
+            <span>${t.iterations} iter</span>
+            ${t.toolCalls?.length ? `<span>${t.toolCalls.length} tool${t.toolCalls.length !== 1 ? 's' : ''}</span>` : ''}
+            <span>${new Date(t.timestamp).toLocaleTimeString()}</span>
+          </div>
+        </summary>
+        <div class="border-t border-gray-100 dark:border-gray-700 px-5 py-4 space-y-3 text-sm" data-trace-id="${esc(t.id)}">
+          <div><p class="font-medium text-gray-500 dark:text-gray-400 mb-1">Input</p><pre class="bg-gray-50 dark:bg-gray-900 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap">${esc(t.input)}</pre></div>
+          ${t.error
+            ? `<div><p class="font-medium text-red-500 mb-1">Error</p><pre class="bg-red-50 dark:bg-red-900/20 rounded p-3 text-xs overflow-x-auto text-red-700 dark:text-red-300">${esc(t.error)}</pre></div>`
+            : `<div><p class="font-medium text-gray-500 dark:text-gray-400 mb-1">Output</p><pre class="bg-gray-50 dark:bg-gray-900 rounded p-3 text-xs overflow-x-auto whitespace-pre-wrap">${esc(t.output)}</pre></div>`}
+          ${t.toolCalls?.length ? `
+            <div>
+              <p class="font-medium text-gray-500 dark:text-gray-400 mb-1">Tool calls (${t.toolCalls.length})</p>
+              <div class="space-y-2">${t.toolCalls.map(tc => `
+                <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded p-3">
+                  <p class="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">${esc(tc.name)}</p>
+                  <pre class="text-xs overflow-x-auto text-gray-700 dark:text-gray-300">${esc(JSON.stringify(tc.args, null, 2))}</pre>
+                </div>`).join('')}
+              </div>
+            </div>` : ''}
+        </div>
+      </details>
+    `).join('');
+  } catch {
+    el.innerHTML = '<p class="text-center text-red-400 py-8">Failed to load traces.</p>';
+  }
+}
+
+// ── Sessions ──────────────────────────────────────────────────────────────────
+
+async function loadSessions(): Promise<void> {
+  const el = getEl('sessions-list');
+  el.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-8">Loading sessions…</p>';
+  try {
+    const res = await fetch(BASE + '/api/sessions');
+    const data = (await res.json()) as { sessions: SessionRecord[]; note?: string };
+    if (data.note) {
+      el.innerHTML = `<div class="text-center py-8"><p class="text-gray-500 dark:text-gray-400">${esc(data.note)}</p><p class="text-xs text-gray-400 mt-1">Configure D1 memory to manage sessions here.</p></div>`;
+      return;
+    }
+    if (!data.sessions.length) {
+      el.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-8">No sessions found.</p>';
+      return;
+    }
+    el.innerHTML = `<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-700">
+          <tr>
+            <th class="text-left px-4 py-2.5 font-medium text-gray-600 dark:text-gray-400">Session ID</th>
+            <th class="text-left px-4 py-2.5 font-medium text-gray-600 dark:text-gray-400">Messages</th>
+            <th class="text-left px-4 py-2.5 font-medium text-gray-600 dark:text-gray-400">Last activity</th>
+            <th class="px-4 py-2.5"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+          ${data.sessions.map(s => `
+            <tr>
+              <td class="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">${esc(s.sessionId.slice(0, 20))}…</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-400">${s.messageCount}</td>
+              <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">${new Date(s.lastActivity).toLocaleString()}</td>
+              <td class="px-4 py-3 text-right">
+                <button data-delete-session="${esc(s.sessionId)}"
+                  class="text-xs text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">Delete</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  } catch {
+    el.innerHTML = '<p class="text-center text-red-400 py-8">Failed to load sessions.</p>';
+  }
+}
+
+async function deleteSession(sessionId: string): Promise<void> {
+  if (!confirm('Delete session ' + sessionId.slice(0, 8) + '…?')) return;
+  try {
+    await fetch(BASE + '/api/sessions/' + encodeURIComponent(sessionId), { method: 'DELETE' });
+    await loadSessions();
+  } catch {
+    alert('Failed to delete session.');
+  }
+}
+
+// ── Metrics ───────────────────────────────────────────────────────────────────
+
+async function loadMetrics(): Promise<void> {
+  const el = getEl('metrics-content');
+  el.innerHTML = '<p class="text-center text-gray-400 dark:text-gray-500 py-8">Loading metrics…</p>';
+  try {
+    const res = await fetch(BASE + '/api/metrics');
+    const m = (await res.json()) as MetricsData;
+    el.innerHTML = `
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        ${metricCard('Requests', String(m.requestCount), '')}
+        ${metricCard('Errors', String(m.errorCount), m.requestCount ? (m.errorRate * 100).toFixed(1) + '%' : '')}
+        ${metricCard('Avg latency', m.avgLatencyMs + 'ms', '')}
+        ${metricCard('p50 latency', m.p50LatencyMs + 'ms', '')}
+        ${metricCard('p95 latency', m.p95LatencyMs + 'ms', '')}
+        ${metricCard('Tool call rate', m.requestCount ? (m.toolCallRate * 100).toFixed(1) + '%' : '—', '')}
+      </div>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-4">Stats reset when the Worker restarts.</p>
+    `;
+  } catch {
+    el.innerHTML = '<p class="text-center text-red-400 py-8">Failed to load metrics.</p>';
+  }
+}
+
+function metricCard(label: string, value: string, sub: string): string {
+  return `
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">${esc(label)}</p>
+      <p class="text-2xl font-bold text-gray-800 dark:text-white mt-1">${esc(value)}</p>
+      ${sub ? `<p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">${esc(sub)}</p>` : ''}
+    </div>
+  `;
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -184,6 +369,13 @@ function appendMessage(role: string, text: string, opts: AppendMessageOptions = 
         itr.className = 'text-xs text-gray-400 dark:text-gray-500';
         itr.textContent = opts.iterations + ' iteration' + (opts.iterations !== 1 ? 's' : '');
         footer.appendChild(itr);
+      }
+
+      if (opts.durationMs != null) {
+        const lat = document.createElement('span');
+        lat.className = 'text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded';
+        lat.textContent = opts.durationMs + 'ms';
+        footer.appendChild(lat);
       }
 
       const copyBtn = document.createElement('button');
@@ -288,12 +480,13 @@ async function sendMessage(e: SubmitEvent): Promise<void> {
       addRetryButton(errBubble.parentElement as HTMLElement, input);
       chatHistory.push({ role: 'assistant', content: 'Error: ' + data.error, timestamp: new Date().toISOString(), error: true });
     } else {
-      appendMessage('assistant', data.output, { iterations: data.iterations });
+      appendMessage('assistant', data.output, { iterations: data.iterations, durationMs: data.durationMs });
       chatHistory.push({
         role: 'assistant',
         content: data.output,
         timestamp: new Date().toISOString(),
         iterations: data.iterations,
+        durationMs: data.durationMs,
         toolCalls: data.toolCalls,
       });
       renderToolCalls(data.toolCalls);
@@ -354,15 +547,15 @@ function renderToolCalls(toolCalls: ToolCallData[] | undefined): void {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-// Script is injected at the bottom of <body>, so the DOM is already parsed.
 
-// Apply dark mode immediately to prevent flash of unstyled content
 const savedDark = localStorage.getItem(STORAGE_DARK_KEY);
 applyDark(savedDark !== null ? savedDark === '1' : window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-// Wire up all event listeners
 getEl('tab-playground').addEventListener('click', () => showTab('playground'));
 getEl('tab-agents').addEventListener('click', () => showTab('agents'));
+getEl('tab-traces').addEventListener('click', () => showTab('traces'));
+getEl('tab-sessions').addEventListener('click', () => showTab('sessions'));
+getEl('tab-metrics').addEventListener('click', () => showTab('metrics'));
 getEl('dark-btn').addEventListener('click', () => toggleDark());
 getEl('export-btn').addEventListener('click', () => exportChat());
 getEl('clear-btn').addEventListener('click', () => clearChat());
@@ -370,8 +563,14 @@ getEl<HTMLFormElement>('chat-form').addEventListener('submit', (e: Event) => {
   void sendMessage(e as SubmitEvent);
 });
 getEl('agents-list').addEventListener('click', (e: MouseEvent) => {
-  const btn = (e.target as Element).closest<HTMLButtonElement>('[data-agent-name]');
-  if (btn?.dataset.agentName) selectAgent(btn.dataset.agentName);
+  const agentBtn = (e.target as Element).closest<HTMLButtonElement>('[data-agent-name]');
+  if (agentBtn?.dataset.agentName) { selectAgent(agentBtn.dataset.agentName); return; }
+  const configBtn = (e.target as Element).closest<HTMLButtonElement>('[data-config-name]');
+  if (configBtn?.dataset.configName) { void toggleAgentConfig(configBtn.dataset.configName); }
+});
+getEl('sessions-list').addEventListener('click', (e: MouseEvent) => {
+  const btn = (e.target as Element).closest<HTMLButtonElement>('[data-delete-session]');
+  if (btn?.dataset.deleteSession) void deleteSession(btn.dataset.deleteSession);
 });
 document.addEventListener('keydown', (e: KeyboardEvent) => {
   const chatInput = document.getElementById('chat-input');
@@ -383,5 +582,9 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
     chatInput?.blur();
   }
 });
+
+document.getElementById('refresh-traces-btn')?.addEventListener('click', () => void loadTraces());
+document.getElementById('refresh-sessions-btn')?.addEventListener('click', () => void loadSessions());
+document.getElementById('refresh-metrics-btn')?.addEventListener('click', () => void loadMetrics());
 
 loadAgents().catch((err: unknown) => console.error('Failed to load agents:', err));
