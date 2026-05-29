@@ -193,6 +193,25 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  packages/intent-classifier:
+    dependencies:
+      '@moon-wave/types':
+        specifier: workspace:*
+        version: link:../types
+      '@moon-wave/workflow':
+        specifier: workspace:*
+        version: link:../workflow
+    devDependencies:
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(postcss@8.5.15)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@24.12.4)
+
   packages/mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
