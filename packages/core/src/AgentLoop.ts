@@ -1,5 +1,6 @@
 import type { Message, AgentContext, AgentResult, LLMProvider } from '@moon-wave/types';
 import type { MemoryManager } from '@moon-wave/memory';
+import type { SafetyLayer } from '@moon-wave/safety';
 import type { ToolRegistry } from './tool';
 
 interface LoopConfig {
@@ -9,6 +10,7 @@ interface LoopConfig {
   memory: MemoryManager;
   tools: ToolRegistry;
   maxIterations: number;
+  safety?: SafetyLayer;
 }
 
 export class AgentLoop {
@@ -19,6 +21,10 @@ export class AgentLoop {
     const toolCallLog: AgentResult['toolCalls'] = [];
 
     await memory.addMessage(ctx.sessionId, { role: 'user', content: userMessage });
+
+    if (this.config.safety) {
+      await this.config.safety.checkInput(userMessage, this.config.agentName, ctx);
+    }
 
     const systemMessage: Message = { role: 'system', content: this.config.systemPrompt };
     const userMsg: Message = { role: 'user', content: userMessage };
@@ -54,7 +60,10 @@ export class AgentLoop {
         continue;
       }
 
-      const finalContent = response.content ?? '';
+      let finalContent = response.content ?? '';
+      if (this.config.safety) {
+        finalContent = await this.config.safety.checkOutput(finalContent, this.config.agentName, ctx);
+      }
       const assistantMsg: Message = { role: 'assistant', content: finalContent };
       messages.push(assistantMsg);
       await memory.addMessage(ctx.sessionId, assistantMsg);
