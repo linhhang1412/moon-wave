@@ -29,3 +29,12 @@ export interface AgentResult {
   iterations: number;
   toolCalls: Array<{ name: string; args: unknown; result: unknown }>;
 }
+
+export interface AgentPublicConfig {
+  name: string;
+  model: { provider: string; model: string };
+  memory: string;
+  tools: Array<{ name: string; description: string }>;
+  systemPrompt: string;
+  maxIterations: number;
+}

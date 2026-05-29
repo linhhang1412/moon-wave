@@ -1,5 +1,5 @@
 import type { ProjectConfig } from '../../types.js';
-import { providerEnvKey, providerModel } from '../constants.js';
+import { providerEnvKey } from '../constants.js';
 
 // ─── src/shared/env.ts ────────────────────────────────────────────────────────
 
@@ -69,8 +69,7 @@ export function createWriterAgent() {
 // ─── src/features/chat/network.ts ────────────────────────────────────────────
 
 export function chatNetworkTs(config: ProjectConfig): string {
-  const { provider } = config;
-  const model = providerModel[provider];
+  const { provider, model } = config;
 
   return `import { AgentNetwork } from '@moon-wave/multi-agent';
 import { createResearchAgent } from './agents/research';

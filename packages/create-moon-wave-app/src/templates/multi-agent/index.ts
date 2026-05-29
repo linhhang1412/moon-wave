@@ -34,7 +34,7 @@ export async function generateMultiAgentFiles(config: ProjectConfig, root: strin
     writeFile(join(root, 'package.json'), multiAgentPackageJson(config)),
     writeFile(join(root, 'wrangler.toml'), multiAgentWranglerToml(config)),
     writeFile(join(root, 'tsconfig.json'), tsconfigJson()),
-    writeFile(join(root, '.env.example'), multiAgentEnvExample(config)),
+    writeFile(join(root, '.dev.vars.example'), multiAgentEnvExample(config)),
     writeFile(join(root, '.gitignore'), gitignore()),
     writeFile(join(root, 'README.md'), multiAgentReadme(config)),
   ];

@@ -1,5 +1,5 @@
 import type { ProjectConfig } from '../../types.js';
-import { providerEnvKey, providerModel } from '../constants.js';
+import { providerEnvKey } from '../constants.js';
 
 // ─── src/shared/env.ts ────────────────────────────────────────────────────────
 
@@ -19,8 +19,7 @@ ${providerLine}
 // ─── src/features/agent/handler.ts ───────────────────────────────────────────
 
 export function mcpAgentHandlerTs(config: ProjectConfig): string {
-  const { name, provider } = config;
-  const model = providerModel[provider];
+  const { name, provider, model } = config;
 
   return `import { Agent } from '@moon-wave/core';
 import { MCPAgentServer } from '@moon-wave/mcp';

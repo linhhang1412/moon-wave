@@ -1,5 +1,6 @@
 import * as p from '@clack/prompts';
 import type { ProjectConfig, Provider, Memory, Channel, Template, PackageManager } from './types.js';
+import { providerModels } from './templates/constants.js';
 
 export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
   p.intro('create-moon-wave-app');
@@ -36,6 +37,13 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
   });
 
   if (p.isCancel(provider)) { p.cancel('Cancelled.'); process.exit(0); }
+
+  const models = providerModels[provider as Provider];
+  const modelAnswer = await p.select<{ value: string; label: string; hint?: string }[], string>({
+    message: 'Model:',
+    options: models.map((m, i) => ({ value: m, label: m, hint: i === 0 ? 'recommended' : undefined })),
+  });
+  if (p.isCancel(modelAnswer)) { p.cancel('Cancelled.'); process.exit(0); }
 
   // memory + channel + dashboard apply to agent and multi-agent templates
   let memory: Memory = 'none';
@@ -94,6 +102,7 @@ export async function runPrompts(nameArg?: string): Promise<ProjectConfig> {
     name: String(name).trim(),
     template: template as Template,
     provider: provider as Provider,
+    model: String(modelAnswer),
     memory,
     channel,
     dashboard,

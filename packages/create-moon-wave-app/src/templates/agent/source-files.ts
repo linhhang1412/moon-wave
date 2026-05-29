@@ -1,5 +1,5 @@
 import type { ProjectConfig } from '../../types.js';
-import { providerEnvKey, providerModel } from '../constants.js';
+import { providerEnvKey } from '../constants.js';
 
 // ─── src/shared/env.ts ────────────────────────────────────────────────────────
 
@@ -35,8 +35,7 @@ export function sharedCorsTs(): string {
 // ─── src/features/chat/agent.ts ───────────────────────────────────────────────
 
 export function chatAgentTs(config: ProjectConfig): string {
-  const { provider, memory, name } = config;
-  const model = providerModel[provider];
+  const { provider, memory, name, model } = config;
 
   return `import { Agent } from '@moon-wave/core';
 

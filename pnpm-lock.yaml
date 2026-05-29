@@ -157,6 +157,9 @@ importers:
       '@moon-wave/core':
         specifier: workspace:*
         version: link:../core
+      '@moon-wave/memory':
+        specifier: workspace:*
+        version: link:../memory
       '@moon-wave/types':
         specifier: workspace:*
         version: link:../types

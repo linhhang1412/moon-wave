@@ -61,4 +61,18 @@ export class D1MemoryAdapter implements MemoryAdapter {
       .bind(sessionId)
       .run();
   }
+
+  async listSessions(limit = 50): Promise<Array<{ sessionId: string; messageCount: number; lastActivity: string }>> {
+    const { results } = await this.db
+      .prepare(
+        `SELECT session_id, COUNT(*) as message_count, MAX(created_at) as last_activity
+         FROM agent_messages
+         GROUP BY session_id
+         ORDER BY last_activity DESC
+         LIMIT ?`,
+      )
+      .bind(limit)
+      .all<{ session_id: string; message_count: number; last_activity: string }>();
+    return results.map(r => ({ sessionId: r.session_id, messageCount: r.message_count, lastActivity: r.last_activity }));
+  }
 }

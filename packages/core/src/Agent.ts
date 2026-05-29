@@ -1,4 +1,4 @@
-import type { AgentConfig, AgentContext, AgentResult, LLMProvider, ToolDefinition } from '@moon-wave/types';
+import type { AgentConfig, AgentContext, AgentPublicConfig, AgentResult, LLMProvider, ToolDefinition } from '@moon-wave/types';
 import { LLMRouter } from '@moon-wave/providers';
 import { MemoryManager, KVMemoryAdapter, D1MemoryAdapter } from '@moon-wave/memory';
 import { ToolRegistry, tool } from './tool';
@@ -65,6 +65,17 @@ export class Agent {
     if (!systemPrompt) return 'You are a helpful assistant.';
     if (typeof systemPrompt === 'function') return systemPrompt(ctx);
     return systemPrompt;
+  }
+
+  getPublicConfig(): AgentPublicConfig {
+    return {
+      name: this.config.name,
+      model: this.config.model,
+      memory: this.config.memory ?? 'kv',
+      tools: this.registry.getSchemas().map(s => ({ name: s.name, description: s.description })),
+      systemPrompt: typeof this.config.systemPrompt === 'string' ? this.config.systemPrompt : '[dynamic]',
+      maxIterations: this.config.maxIterations ?? 10,
+    };
   }
 
   async run(input: string, ctx: AgentContext): Promise<AgentResult> {

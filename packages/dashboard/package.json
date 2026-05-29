@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@moon-wave/core": "workspace:*",
+    "@moon-wave/memory": "workspace:*",
     "@moon-wave/types": "workspace:*"
   },
   "devDependencies": {
