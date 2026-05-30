@@ -1,6 +1,6 @@
 {
   "name": "@moon-wave/dashboard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Self-hosted dashboard for moon-wave agents — playground, traces, sessions",
   "type": "module",
   "exports": {
@@ -23,7 +23,11 @@
     "@moon-wave/types": "workspace:*"
   },
   "devDependencies": {
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
     "esbuild": "^0.25.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0"
   },

@@ -9,7 +9,7 @@ export function packageJson(config: ProjectConfig): string {
 
   if (memory !== 'none') deps['@moon-wave/memory'] = '^0.1.0';
   if (channel !== 'none') deps['@moon-wave/channels'] = '^0.1.0';
-  if (dashboard) deps['@moon-wave/dashboard'] = '^0.1.0';
+  if (dashboard) deps['@moon-wave/dashboard'] = '^0.2.0';
 
   return JSON.stringify(
     {
