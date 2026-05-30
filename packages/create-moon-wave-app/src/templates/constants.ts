@@ -1,5 +1,17 @@
 import type { Provider } from '../types.js';
 
+// Versions của các @moon-wave/* packages trên npm.
+// Khi publish package mới, chỉ cần cập nhật tại đây.
+export const VERSIONS = {
+  core:        '^0.1.2',
+  providers:   '^0.1.1',
+  memory:      '^0.1.1',
+  channels:    '^0.1.1',
+  dashboard:   '^0.2.1',
+  mcp:         '^0.1.1',
+  multiAgent:  '^0.1.1',
+} as const;
+
 export const providerEnvKey: Record<Provider, string> = {
   groq: 'GROQ_API_KEY',
   google: 'GOOGLE_API_KEY',

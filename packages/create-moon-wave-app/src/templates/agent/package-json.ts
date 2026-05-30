@@ -1,15 +1,16 @@
 import type { ProjectConfig } from '../../types.js';
+import { VERSIONS } from '../constants.js';
 
 export function packageJson(config: ProjectConfig): string {
   const { name, memory, channel, dashboard } = config;
   const deps: Record<string, string> = {
-    '@moon-wave/core': '^0.1.2',
-    '@moon-wave/providers': '^0.1.1',
+    '@moon-wave/core':      VERSIONS.core,
+    '@moon-wave/providers': VERSIONS.providers,
   };
 
-  if (memory !== 'none') deps['@moon-wave/memory'] = '^0.1.1';
-  if (channel !== 'none') deps['@moon-wave/channels'] = '^0.1.1';
-  if (dashboard) deps['@moon-wave/dashboard'] = '^0.2.1';
+  if (memory !== 'none') deps['@moon-wave/memory']    = VERSIONS.memory;
+  if (channel !== 'none') deps['@moon-wave/channels']  = VERSIONS.channels;
+  if (dashboard)           deps['@moon-wave/dashboard'] = VERSIONS.dashboard;
 
   return JSON.stringify(
     {

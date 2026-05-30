@@ -14,7 +14,8 @@
     "build:client": "node build-client.mjs",
     "typecheck": "tsc --noEmit && tsc --project src/client/tsconfig.json --noEmit",
     "dev": "tsup src/index.ts --format esm --dts --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "node -e \"if(process.env.npm_execpath&&!process.env.npm_execpath.includes('pnpm')){console.error('\\nERROR: dùng pnpm publish thay vì npm publish\\n');process.exit(1)}\""
   },
   "dependencies": {
     "@moon-wave/core": "workspace:*",

@@ -1,4 +1,5 @@
 import type { ProjectConfig } from '../../types.js';
+import { VERSIONS } from '../constants.js';
 
 export function mcpPackageJson(config: ProjectConfig): string {
   return JSON.stringify(
@@ -12,8 +13,8 @@ export function mcpPackageJson(config: ProjectConfig): string {
         deploy: 'wrangler deploy',
       },
       dependencies: {
-        '@moon-wave/core': '^0.1.2',
-        '@moon-wave/mcp': '^0.1.1',
+        '@moon-wave/core': VERSIONS.core,
+        '@moon-wave/mcp':  VERSIONS.mcp,
       },
       devDependencies: {
         '@cloudflare/workers-types': '^4.20241205.0',

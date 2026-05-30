@@ -9,7 +9,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --clean",
     "dev": "tsup src/index.ts --format esm --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "node -e \"if(process.env.npm_execpath&&!process.env.npm_execpath.includes('pnpm')){console.error('\\nERROR: dùng pnpm publish thay vì npm publish\\n');process.exit(1)}\""
   },
   "dependencies": {
     "@clack/prompts": "^0.9.0",
