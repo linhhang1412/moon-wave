@@ -3,13 +3,13 @@ import type { ProjectConfig } from '../../types.js';
 export function packageJson(config: ProjectConfig): string {
   const { name, memory, channel, dashboard } = config;
   const deps: Record<string, string> = {
-    '@moon-wave/core': '^0.1.0',
-    '@moon-wave/providers': '^0.1.0',
+    '@moon-wave/core': '^0.1.2',
+    '@moon-wave/providers': '^0.1.1',
   };
 
-  if (memory !== 'none') deps['@moon-wave/memory'] = '^0.1.0';
-  if (channel !== 'none') deps['@moon-wave/channels'] = '^0.1.0';
-  if (dashboard) deps['@moon-wave/dashboard'] = '^0.2.0';
+  if (memory !== 'none') deps['@moon-wave/memory'] = '^0.1.1';
+  if (channel !== 'none') deps['@moon-wave/channels'] = '^0.1.1';
+  if (dashboard) deps['@moon-wave/dashboard'] = '^0.2.1';
 
   return JSON.stringify(
     {

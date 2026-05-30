@@ -21,7 +21,6 @@ export function gitignore(): string {
   return `node_modules
 dist
 .wrangler
-.env
-.env.local
+.dev.vars
 `;
 }

@@ -30,7 +30,7 @@ export async function generateAgentFiles(config: ProjectConfig, root: string): P
     writeFile(join(root, 'package.json'), packageJson(config)),
     writeFile(join(root, 'wrangler.toml'), wranglerToml(config)),
     writeFile(join(root, 'tsconfig.json'), tsconfigJson()),
-    writeFile(join(root, '.env.example'), envExample(config)),
+    writeFile(join(root, '.dev.vars.example'), envExample(config)),
     writeFile(join(root, '.gitignore'), gitignore()),
     writeFile(join(root, 'README.md'), readme(config)),
   ];

@@ -1,6 +1,6 @@
 {
   "name": "@moon-wave/dashboard",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Self-hosted dashboard for moon-wave agents — playground, traces, sessions",
   "type": "module",
   "exports": {
